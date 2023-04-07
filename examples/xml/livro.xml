@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<livro>
+    <title>It: A coisa</title>
+    <synopsis>
+        Durante as férias de 1958, em uma pacata cidadezinha chamada Derry, um grupo de sete amigos começa a ver coisas estranhas. Um conta que viu um palhaço, outro que viu uma múmia. Finalmente, acabam descobrindo que estavam todos vendo a mesma coisa: um ser sobrenatural e maligno que pode assumir várias formas. É assim que Bill, Beverly, Eddie, Ben, Richie, Mike e Stan enfrentam a Coisa pela primeira vez...
+    </synopsis>
+    <author>
+        <name>Stephen King</name>
+        <age>75</age>
+        <nationality>Estadunidense</nationality>
+    </author>
+</livro>

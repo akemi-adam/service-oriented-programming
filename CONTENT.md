@@ -116,14 +116,90 @@ Algumas de suas principais características são:
   - Armazenamento em cache para otimização da interação cliente-servidor
   - O formato da informação deve ser padronizado
   - Sistema em camadas para organizar os tipos de servidores
+<br/><br/>
 
+# Dados semiestruturados
+
+Dados semiestruturados são comumente chamados de noSQL (não SQL). Todos os bancos de dados relacionais estão estruturados em SQL, que nada mais é do que dizer que eles estão estruturados em tabelas. Dizer que uma estrutura é noSQL é o mesmo que falar que essa estrutura não organiza seus dados por tabelas, colunas e chaves primárias.
+
+Entretanto, esses dados estão sim estruturados, possuem em geral índices ou marcadores para distinguir os elementos e contém hierarquias.
+
+Nessa seção, iremos ver mais sobre duas linguagens que são usadas para estruturar dados. Vão ser nessas formas de estruturas que nossos serviços vão restornar os dados de uma resposta, uma vez que praticamente qualquer linguagem de programação possui uma forma nativa ou alguma biblioteca que consiga interpretar e tratar esse tipo de dado.
+<br/><br/>
+
+## XML
+
+*Extensible Markup Language* (XML) é uma linguagem que estrutura os dados de forma hierárquica muito semelhante ao HTML na sintaxe e no formato. Vejamos um exemplo:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<user>
+  <id>7</id> <!-- ID -->
+  <name>Akemi Adam</name> <!-- Nome -->
+  <age>18</age> <!-- Idade -->
+  <address> <!-- Endereço -->
+    <city>Caicó</city> <!-- Cidade -->
+    <district>Rio Grande do Norte</district> <!-- Estado -->
+  </address>
+</user>
+```
+
+Primeiramente, se declara a versão do XML que está sendo utilizada, isso na primeira linha.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+```
+
+Depois do atributo version, há o encoding, que diz respeito a codificação e interpretação de caracteres. UTF-8 foi a escolha por ser aceitar acentos nas letras e outros caracteres especiais.
+
+Seguindo agora para a estruturação de fato dos dados, podemos perceber que ela é bem flexível, mais próxima de uma linguagem natural. Por padrão, se declara sempre um único elemento raiz; essa tag vai conter todos os outros dados. No exemplo, essa tag é o elemento `<user></user>`.
+
+Em seguida, podemos definir outros elementos dentro do nosso elemento raiz. Esses elementos vão corresponder ao dados do usuário no nosso exemplo, como:
+
+```xml
+<id>7</id> <!-- ID -->
+<name>Akemi Adam</name> <!-- Name -->
+<age>18</age> <!-- Idade -->
+```
+
+Nesse caso, os atributos do elemento `<user>` vão ser os elementos: `<id>`, `<name>` e `<age>` e terão como valor o que está dentro da tag, respectivamente `7`, `"Akemi Adam"` e `18`.
+
+Tal como no HTML, para representar um comentário em XML, podemos utilizar a tag `<!-- -->`, pondo o nosso comentário entre os traços.
+
+Além de poder inserir os dados diretamente no seu respectivo elemento, podemos colocar outros elementos dentro um elemento para agrupar dados que possuem relação, como é mostrado no exemplo no elemento `<address>`:
+
+```xml
+<address> <!-- Endereço -->
+  <city>Caicó</city> <!-- Cidade -->
+  <district>Rio Grande do Norte</district> <!-- Estado -->
+</address>
+```
+
+Aqui, o elemento `<address>` guarda dois outros elementos: `<city>`, `<district>`; que tem os respectivos valores: `"Caicó"`, `"Rio Grande do Norte"`
+
+Uma outra forma de estruturar esses dados do usuário é utilizar atributos nos elementos:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<user id="7" name="Akemi Adam" age="18">
+  <address city="Caicó" district="Rio Grande do Norte"/>
+</user>
+```
+
+Dessa forma, refatoramos todos os elementos que representavam algum dado isolado e colocamos eles como atributos dos seus referidos contextos.
+
+Caso queira ver outros exemplos de arquivos XML, <a href="./examples/xml">clique aqui!</a>
 <br/><br/>
 
 # Referências
 
-Amazon Web Services. O que é arquitetura orientada a serviços? Disponível em: https://aws.amazon.com/pt/what-is/service-oriented-architecture/. Acesso em: 28 mar. 2023.
+ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
 
 ALLAMARAJU, Subbu. RESTful Web Services Cookbook. 1. ed. Sebastopol: O'Reilly Media, 2010.
+
+Amazon Web Services. O que é arquitetura orientada a serviços? Disponível em: https://aws.amazon.com/pt/what-is/service-oriented-architecture/. Acesso em: 28 mar. 2023.
+
+CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com/pt-br/learning/security/api/what-is-api-endpoint/. Acesso em: 28 mar. 2023.
 
 GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviços (SOA)? Disponível em: https://www.treinaweb.com.br/blog/voce-sabe-o-que-e-arquitetura-orientada-a-servicos-soa/. Acesso em: 28 mar. 2023.
 
@@ -131,6 +207,4 @@ WIKIPÉDIA. Web service. Disponível em: https://pt.wikipedia.org/wiki/Web_servi
 
 WIKIPÉDIA. Service-oriented architecture. Disponível em: https://pt.wikipedia.org/wiki/Service-oriented_architecture. Acesso em: 28 mar. 2023.
 
-ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
-
-CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com/pt-br/learning/security/api/what-is-api-endpoint/. Acesso em: 28 mar. 2023.
+WIKIPEDIA. Dados semiestruturados. Disponível em: https://pt.wikipedia.org/wiki/Dados_semiestruturados. Acesso em: 28 mar. 2023.
