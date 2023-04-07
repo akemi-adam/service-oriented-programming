@@ -191,6 +191,79 @@ Dessa forma, refatoramos todos os elementos que representavam algum dado isolado
 Caso queira ver outros exemplos de arquivos XML, <a href="./examples/xml">clique aqui!</a>
 <br/><br/>
 
+## JSON
+
+Agora, vamos falar de coisa boa!
+
+*`JavaScript Object Notation`* (JSON) — ou "Jhonson", para os mais íntimos —  é uma estrutura de dados simples, direta, fácil de ler, e rápida que é amplamente utilizada para troca de informações entre sistemas. A grande maioria dos `Web Services` devolvem seus dados em JSON; e praticamente qualquer linguagem de programação que se preze possui alguma forma de ler e processar JSON.
+
+Mas, como é o JSON? Bem, ele é estruturado da seguinte forma:
+
+```json
+{
+  "id": 7,
+  "name": "Akemi Adam",
+  "age": 18,
+  "address": {
+    "city": "Caicó",
+    "district": "Rio Grande do Norte"
+  }
+}
+```
+
+Utilizando o mesmo exemplo do XML, podemos identificar que para os dados serem estruturados em JSON, eles precisam estar dentro de um par de chaves global como mostrado abaixo:
+
+```json
+{
+  // ...
+}
+```
+
+Uma chave abrindo no início, outra fechando no final. Nota: Para fazer comentários em JSON, é a mesma forma que se faz no JavaScript: `//` e `/**/`.
+
+Prosseguindo, para declarar um atributo (um nome/chave associada a um valor), deve-se escrevé-lo dentro das `{}` globais e dentro de aspas duplas (`""`), como no caso do atributo `"name"`. Após a declaração do atributo, coloca-se o sinal de dois pontos e em seguida o valor do atributo:
+
+```json
+{
+  "name": "Akemi Adam"
+}
+```
+
+Os valores que podem ser atribuídos a um atributo podem ser dos seguintes tipos:
+
+  - String (entre aspas duplas)
+  - Number
+  - Object (par de chaves)
+  - Array (par de parênteses)
+  - Boolean
+  - Null
+
+Uma coisa bem interessante sobre o formato JSON é que ele é um objeto JavaScript. Isso torna muito mais fácil tanto de se entender quanto de se trabalhar com esse tipo de dado.
+
+Em Javascript, poderíamos criar um objeto equivalente ao JSON de usuário assim:
+
+```javascript
+const user = {
+  id: 7,
+  name: "Akemi Adam",
+  age: 18,
+  address: {
+    city: "Caicó",
+    district: "Rio Grande do Norte"
+  }
+}
+```
+<br>
+
+## Qual dos dois usar?
+
+A resposta depende do contexto e do que você quer fazer.
+
+Para nosso caso, ao decorrer da explicação, irei utilizar e mostrar os exemplos sempre em JSON, pois é o formato mais usado hoje em dia. Em comparação com XML, JSON é muito, muito mais limpo e legível. Utiliza `parse` de String para ler e interpretar os dados e tem a vantagem de se integrar perfeitamente com JavaScript. Além do que, é o que eu tenho mais familiariedade.
+
+Entretanto, posso adicionar posteriormente uma documentação de como trabalhar com XML.
+<br/><br/>
+
 # Referências
 
 ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
@@ -205,6 +278,8 @@ CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com
 
 GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviços (SOA)? Disponível em: https://www.treinaweb.com.br/blog/voce-sabe-o-que-e-arquitetura-orientada-a-servicos-soa/. Acesso em: 28 mar. 2023.
 
+JSON. Disponível em: https://www.json.org/json-pt.html. Acesso em: 28 mar. 2023.
+
 RED HAT. What is a REST API?. Disponível em: https://www.redhat.com/pt-br/topics/api/what-is-a-rest-api. Acesso em: 28 mar. 2023.
 
 WIKIPÉDIA. Web service. Disponível em: https://pt.wikipedia.org/wiki/Web_service. Acesso em: 28 mar. 2023.
@@ -214,5 +289,7 @@ WIKIPÉDIA. Service-oriented architecture. Disponível em: https://pt.wikipedia.
 WIKIPEDIA. Dados semiestruturados. Disponível em: https://pt.wikipedia.org/wiki/Dados_semiestruturados. Acesso em: 28 mar. 2023.
 
 WIKIPEDIA. XML. Disponível em: https://pt.wikipedia.org/wiki/XML. Acesso em: 28 mar. 2023.
+
+WIKIPEDIA. JSON. Disponível em: https://pt.wikipedia.org/wiki/JSON. Acesso em: 28 mar. 2023.
 
 W3SCHOOLS. XML Attributes. Disponível em: https://www.w3schools.com/xml/xml_attributes.asp. Acesso em: 28 mar. 2023.
