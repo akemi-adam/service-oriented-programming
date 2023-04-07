@@ -42,7 +42,7 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
 
 # Introdução
 
-Programação Orientada à Serviços, do inglês *Service Oriented Programming* (SOP), é uma solução, uma arquitetura, desenvolvida para facilitar a integração de determinados sistemas à aplicações distintas por meio de serviços.
+Programação Orientada à Serviços, do inglês *Service Oriented Programming* (SOP), é uma solução, um paradigma, desenvolvido para facilitar a integração de determinados sistemas à aplicações distintas por meio de serviços.
 
 O Facebook, por exemplo, possui tanto a aplicação web (o site do Facebook), quanto a aplicação para mobile (o aplicativo para celular). Ambas são aplicações tecnicamente distintas mas que implementam os mesmos serviços, pois, uma vez que você faz uma publicação no Facebook pelo celular, você consegue visualizar essa publicação pelo navegador, vice-e-versa.
 
@@ -103,6 +103,20 @@ Veja um exemplo de *endpoint*: `https://servicodados.ibge.gov.br/api/v1/localida
 
 Esse é um dos vários *endpoints* da API do IBGE. Nesse contexto, uma requisição para esse endpoint irá retornar um recurso (nesse caso, as informações de todos os estados brasileiros) e, se esse endpoint é usado para obter um recurso, ele é do tipo GET.
 
+### **Padrão REST**
+
+*Representational State Transfer* (REST) é um padrão de arquitetura baseado no protocolo HTTP. Não vou me aprofundar tanto nesse tópico porque possivelmente não seguiremos esse padrão a risca, entretanto é bom saber que existe e que é nele que iremos nos orientar.
+
+Sendo um padrão de arquitetura, o REST delimita e específica como devemos desenvolver nossa API.
+
+Algumas de suas principais características são:
+
+  - As solicitações da arquitetura cliente-servidor devem ser gerenciadas pelo protocolo HTTP
+  - Ser stateless (sem estado)
+  - Armazenamento em cache para otimização da interação cliente-servidor
+  - O formato da informação deve ser padronizado
+  - Sistema em camadas para organizar os tipos de servidores
+
 <br/><br/>
 
 # Referências
@@ -118,3 +132,5 @@ WIKIPÉDIA. Web service. Disponível em: https://pt.wikipedia.org/wiki/Web_servi
 WIKIPÉDIA. Service-oriented architecture. Disponível em: https://pt.wikipedia.org/wiki/Service-oriented_architecture. Acesso em: 28 mar. 2023.
 
 ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
+
+CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com/pt-br/learning/security/api/what-is-api-endpoint/. Acesso em: 28 mar. 2023.
