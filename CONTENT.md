@@ -72,7 +72,7 @@ Voltando ao exemplo do Facebook, a forma como o aplicativo de celular e o site p
 
 Não pretendo entrar na discussão das diferenças de entre *Application Programming Interface* (API) e *Web Service*; porém, basta entender que, para poder acessar e usar os nossos serviços, iremos utilizar um *Web Service*; que, por sua vez, sempre vai ser uma API. Tão logo, de maneira geral, podemos concluir que: **todo Web Service é uma API, mas nem toda API é um Web Service.** 
 
-Por isso, rotineiramente irei me referir a criação dos nossos *Web Services* como uma API, que vai ser justamente o sistema que irá contém todos os nossos serviços e que será requisitado toda vez que algum outro sistema precisar de um desses serviços.
+Por isso, rotineiramente irei me referir a criação dos nossos *Web Services* como uma API, que vai ser justamente **o sistema que irá contém todos os nossos serviços e que será requisitado toda vez que algum outro sistema precisar de um desses serviços**.
 
 Antes de prosseguir, preciso explicar mais alguns conceitos:
 
@@ -144,17 +144,17 @@ Nessa seção, iremos ver mais sobre duas linguagens que são usadas para estrut
 </user>
 ```
 
-Primeiramente, se declara a versão do XML que está sendo utilizada, isso na primeira linha.
+Primeiramente, se declara a versão do XML que está sendo utilizada.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 ```
 
-Depois do atributo version, há o encoding, que diz respeito a codificação e interpretação de caracteres. UTF-8 foi a escolha por ser aceitar acentos nas letras e outros caracteres especiais.
+Depois do atributo version, há o encoding, que diz respeito a codificação e interpretação de caracteres. UTF-8 foi a escolha por aceitar acentos nas letras e outros caracteres especiais.
 
 Seguindo agora para a estruturação de fato dos dados, podemos perceber que ela é bem flexível, mais próxima de uma linguagem natural. Por padrão, se declara sempre um único elemento raiz; essa tag vai conter todos os outros dados. No exemplo, essa tag é o elemento `<user></user>`.
 
-Em seguida, podemos definir outros elementos dentro do nosso elemento raiz. Esses elementos vão corresponder ao dados do usuário no nosso exemplo, como:
+Em seguida, podemos definir outros elementos dentro do nosso elemento raiz. Esses elementos vão corresponder aos dados do usuário no nosso exemplo, como:
 
 ```xml
 <id>7</id> <!-- ID -->
@@ -197,14 +197,22 @@ ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blo
 
 ALLAMARAJU, Subbu. RESTful Web Services Cookbook. 1. ed. Sebastopol: O'Reilly Media, 2010.
 
-Amazon Web Services. O que é arquitetura orientada a serviços? Disponível em: https://aws.amazon.com/pt/what-is/service-oriented-architecture/. Acesso em: 28 mar. 2023.
+AMAZON WEB SERVICES. O que é arquitetura orientada a serviços? Disponível em: https://aws.amazon.com/pt/what-is/service-oriented-architecture/. Acesso em: 28 mar. 2023.
+
+AMAZON WEB SERVICES. O que é XML?. Disponível em: https://aws.amazon.com/pt/what-is/xml/#:~:text=A%20Extensible%20Markup%20Language%20(XML,dados%20e%20aplica%C3%A7%C3%B5es%20de%20terceiros.. Acesso em: 28 mar. 2023.
 
 CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com/pt-br/learning/security/api/what-is-api-endpoint/. Acesso em: 28 mar. 2023.
 
 GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviços (SOA)? Disponível em: https://www.treinaweb.com.br/blog/voce-sabe-o-que-e-arquitetura-orientada-a-servicos-soa/. Acesso em: 28 mar. 2023.
+
+RED HAT. What is a REST API?. Disponível em: https://www.redhat.com/pt-br/topics/api/what-is-a-rest-api. Acesso em: 28 mar. 2023.
 
 WIKIPÉDIA. Web service. Disponível em: https://pt.wikipedia.org/wiki/Web_service. Acesso em: 28 mar. 2023.
 
 WIKIPÉDIA. Service-oriented architecture. Disponível em: https://pt.wikipedia.org/wiki/Service-oriented_architecture. Acesso em: 28 mar. 2023.
 
 WIKIPEDIA. Dados semiestruturados. Disponível em: https://pt.wikipedia.org/wiki/Dados_semiestruturados. Acesso em: 28 mar. 2023.
+
+WIKIPEDIA. XML. Disponível em: https://pt.wikipedia.org/wiki/XML. Acesso em: 28 mar. 2023.
+
+W3SCHOOLS. XML Attributes. Disponível em: https://www.w3schools.com/xml/xml_attributes.asp. Acesso em: 28 mar. 2023.
