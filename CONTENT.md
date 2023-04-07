@@ -59,6 +59,13 @@ Agora, vamos nos aprofundar melhor nesses conceitos apresentados, como serviços
 
 ## O que é um serviço?
 
+No nosso contexto um serviço é o equivalente a uma função de um sistema que está sendo disponibilizada para outro sistema.
+
+Voltando ao exemplo do Facebook, a forma como o aplicativo de celular e o site publicam um post é a mesma, certo? Tão logo, a função que salva um post vai ser a mesma para ambos os sistemas. Dessa forma, podemos transformar essa funcionalidade em um serviço para que ambas as aplicações possam usufruir dessa função apenas chamando o serviço que salva o post.
+<br/><br/>
+
+## O que é uma API?
+
 
 <br/><br/>
 
