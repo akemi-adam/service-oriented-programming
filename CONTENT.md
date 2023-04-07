@@ -62,14 +62,14 @@ Agora, vamos nos aprofundar melhor nesses conceitos apresentados, como serviços
 <br/><br/>
 
 ## O que é um serviço?
-***
+
 No nosso contexto um serviço é o equivalente a uma função de um sistema que está sendo disponibilizada para outro sistema.
 
 Voltando ao exemplo do Facebook, a forma como o aplicativo de celular e o site publicam um post é a mesma, certo? Tão logo, a função que salva um post vai ser a mesma para ambos os sistemas. Dessa forma, podemos transformar essa funcionalidade em um serviço para que ambas as aplicações possam usufruir dessa função apenas chamando o serviço que salva o post.
 <br/><br/>
 
 ## O que é uma API?
-***
+
 Não pretendo entrar na discussão das diferenças de entre *Application Programming Interface* (API) e *Web Service*; porém, basta entender que, para poder acessar e usar os nossos serviços, iremos utilizar um *Web Service*; que, por sua vez, sempre vai ser uma API. Tão logo, de maneira geral, podemos concluir que: **todo Web Service é uma API, mas nem toda API é um Web Service.** 
 
 Por isso, rotineiramente irei me referir a criação dos nossos *Web Services* como uma API, que vai ser justamente o sistema que irá contém todos os nossos serviços e que será requisitado toda vez que algum outro sistema precisar de um desses serviços.
@@ -84,13 +84,24 @@ Existem outros verbos, mas os principais e os que iremos usar são esses:
 
 |Verbo|Descrição|
 |---|---|
-|GET|Obtém um recurso|
-|POST|Salva um recurso ou realiza operações mais sensíveis|
-|PUT|Atualiza um recurso|
-|DELETE|Deleta um recurso|
+|GET|Usado para obter um recurso|
+|POST|Usado para salvar um recurso ou realiza operações mais sensíveis|
+|PUT|Usado para atualizar um recurso|
+|DELETE|Usado para deletar um recurso|
+
+É muito importante utilizar o verbo (ou método) certo para o serviço certo. Terá situações onde isso não será possível? Sim, mas sempre tente manter o padrão. Se o seu serviço pretende excluir algum objeto ou recurso, utilize o método DELETE. Se pretende recuperar algum recurso, por exemplo, do banco de dados, use o método GET.
+
+Se ainda não está muito claro como fazer isso, não se preocupe, isso será abordado com detalhes mais adiante.
 
 ### **Endpoints**
 
+*Endpoint* é local onde se pode solicitar um recurso ou uma operação de uma API.
+
+Em outras palavras, um *endpoint* na prática nada mais é do que uma **rota** ou uma **url**.
+
+Veja um exemplo de *endpoint*: `https://servicodados.ibge.gov.br/api/v1/localidades/estados`
+
+Esse é um dos vários *endpoints* da API do IBGE. Nesse contexto, uma requisição para esse endpoint irá retornar um recurso (nesse caso, as informações de todos os estados brasileiros) e, se esse endpoint é usado para obter um recurso, ele é do tipo GET.
 
 <br/><br/>
 
