@@ -11,18 +11,21 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
     - [O que é um Serviço?](#o-que-é-um-serviço)
     - [O que é uma API?](#o-que-é-uma-api)
       - [Verbos HTTP](#verbos-http)
+      - [Endpoints](#endpoints)
       - [Padrão Rest](#padrão-rest)
 - [Dados semiestruturados](#dados-semiestruturados)
     - [XML](#xml)
     - [JSON](#json)
     - [Qual dos dois usar?](#qual-dos-dois-usar)
 - [Consumindo um serviço simples](#consumindo-um-serviço-simples)
-    - [Tratando a resposta da requisição](#tratando-a-resposta-da-requisição)
+    - [Tratando a resposta da requisição com PHP](#tratando-a-resposta-da-requisição-com-php)
+      - [Utilizando a biblioteca Guzzle](#utilizando-a-biblioteca-guzzle)
+    - [Tratando a resposta da requisição com Node](#tratando-a-resposta-da-requisição-com-node)
+      - [Utilizando a biblioteca Axios](#utilizando-a-biblioteca-axios)
+    - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
 - [Desenvolvendo um serviço simples](#desenvolvendo-um-serviço-simples)
     - [API simples com PHP](#api-simples-com-php)
-      - [Utilizando a biblioteca Guzzle](#utilizando-a-biblioteca-guzzle)
     - [API simples com Node](#api-simples-com-node)
-      - [Utilizando a biblioteca Axios](#utilizando-a-biblioteca-axios)
     - [API simples com Python](#api-simples-com-python)
 - [Testando nossos Serviços](#testando-nossos-serviços)
     - [Status codes](#status-codes)
@@ -30,6 +33,7 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
     - [Utilizando Postman]($utilizando-postman)
 - [Consumindo nossos Serviços](#consumindo-nossos-serviços)
     - [Consumindo Serviço no lado do Cliente](#consumindo-serviço-no-lado-do-cliente)
+      - [DOM](#dom)
       - [Requisições Ajax](#ajax)
     - [Consumindo Serviço no lado do Servidor](#consumindo-serviço-no-lado-do-servidor)
 - [Finalização](#finalização)
@@ -58,13 +62,34 @@ Agora, vamos nos aprofundar melhor nesses conceitos apresentados, como serviços
 <br/><br/>
 
 ## O que é um serviço?
-
+***
 No nosso contexto um serviço é o equivalente a uma função de um sistema que está sendo disponibilizada para outro sistema.
 
 Voltando ao exemplo do Facebook, a forma como o aplicativo de celular e o site publicam um post é a mesma, certo? Tão logo, a função que salva um post vai ser a mesma para ambos os sistemas. Dessa forma, podemos transformar essa funcionalidade em um serviço para que ambas as aplicações possam usufruir dessa função apenas chamando o serviço que salva o post.
 <br/><br/>
 
 ## O que é uma API?
+***
+Não pretendo entrar na discussão das diferenças de entre *Application Programming Interface* (API) e *Web Service*; porém, basta entender que, para poder acessar e usar os nossos serviços, iremos utilizar um *Web Service*; que, por sua vez, sempre vai ser uma API. Tão logo, de maneira geral, podemos concluir que: **todo Web Service é uma API, mas nem toda API é um Web Service.** 
+
+Por isso, rotineiramente irei me referir a criação dos nossos *Web Services* como uma API, que vai ser justamente o sistema que irá contém todos os nossos serviços e que será requisitado toda vez que algum outro sistema precisar de um desses serviços.
+
+Antes de prosseguir, preciso explicar mais alguns conceitos:
+
+### **Verbos HTTP**
+
+Nossas APIs em suma irão seguir o protocolo HTTP, que em suma, no nosso contexto, é um protocolo que estabelece as operações usadas para comunicação e troca de dados entre cliente e servidor. Essas operações são conhecidas também como *Verbos HTTP* e toda requisição HTTP possui um verbo que evidência e determina a sua intenção.
+
+Existem outros verbos, mas os principais e os que iremos usar são esses:
+
+|Verbo|Descrição|
+|---|---|
+|GET|Obtém um recurso|
+|POST|Salva um recurso ou realiza operações mais sensíveis|
+|PUT|Atualiza um recurso|
+|DELETE|Deleta um recurso|
+
+### **Endpoints**
 
 
 <br/><br/>
@@ -80,3 +105,5 @@ GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviç
 WIKIPÉDIA. Web service. Disponível em: https://pt.wikipedia.org/wiki/Web_service. Acesso em: 28 mar. 2023.
 
 WIKIPÉDIA. Service-oriented architecture. Disponível em: https://pt.wikipedia.org/wiki/Service-oriented_architecture. Acesso em: 28 mar. 2023.
+
+ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
