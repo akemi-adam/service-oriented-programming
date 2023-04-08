@@ -7,22 +7,27 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
 
 # Sumário
 
+- [Resumo](#resumo)
+- [Sumário](#sumário)
 - [Introdução](#introdução)
-    - [O que é um Serviço?](#o-que-é-um-serviço)
-    - [O que é uma API?](#o-que-é-uma-api)
-      - [Verbos HTTP](#verbos-http)
-      - [Endpoints](#endpoints)
-      - [Padrão Rest](#padrão-rest)
+  - [O que é um serviço?](#o-que-é-um-serviço)
+  - [O que é uma API?](#o-que-é-uma-api)
+    - [Verbos HTTP](#verbos-http)
+    - [Endpoints](#endpoints)
+    - [Padrão REST](#padrão-rest)
 - [Dados semiestruturados](#dados-semiestruturados)
-    - [XML](#xml)
-    - [JSON](#json)
-    - [Qual dos dois usar?](#qual-dos-dois-usar)
+  - [XML](#xml)
+  - [JSON](#json)
+  - [Qual dos dois usar?](#qual-dos-dois-usar)
 - [Consumindo um serviço simples](#consumindo-um-serviço-simples)
-    - [Tratando a resposta da requisição com PHP](#tratando-a-resposta-da-requisição-com-php)
-      - [Utilizando a biblioteca Guzzle](#utilizando-a-biblioteca-guzzle)
-    - [Tratando a resposta da requisição com Node](#tratando-a-resposta-da-requisição-com-node)
-      - [Utilizando a biblioteca Axios](#utilizando-a-biblioteca-axios)
-    - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
+  - [Fazendo requisição com PHP](#fazendo-requisição-com-php)
+  - [Tratando a resposta da requisição com PHP](#tratando-a-resposta-da-requisição-com-php)
+    - [Utilizando a biblioteca Guzzle](#utilizando-a-biblioteca-guzzle)
+  - [Fazendo requisição com Node](#fazendo-requisição-com-node)
+  - [Tratando a resposta da requisição com Node](#tratando-a-resposta-da-requisição-com-node)
+    - [Utilizando a biblioteca Axios](#utilizando-a-biblioteca-axios)
+  - [Fazendo requisição com Python](#fazendo-requisição-com-python)
+  - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
 - [Desenvolvendo um serviço simples](#desenvolvendo-um-serviço-simples)
     - [API simples com PHP](#api-simples-com-php)
     - [API simples com Node](#api-simples-com-node)
@@ -38,7 +43,6 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
     - [Consumindo Serviço no lado do Servidor](#consumindo-serviço-no-lado-do-servidor)
 - [Finalização](#finalização)
 - [Referências](#referências)
-<br/><br/>
 
 # Introdução
 
@@ -219,7 +223,7 @@ Utilizando o mesmo exemplo do XML, podemos identificar que para os dados serem e
 }
 ```
 
-Uma chave abrindo no início, outra fechando no final. Nota: Para fazer comentários em JSON, é a mesma forma que se faz no JavaScript: `//` e `/**/`.
+Uma chave abrindo no início, outra fechando no final.
 
 Prosseguindo, para declarar um atributo (um nome/chave associada a um valor), deve-se escrevé-lo dentro das `{}` globais e dentro de aspas duplas (`""`), como no caso do atributo `"name"`. Após a declaração do atributo, coloca-se o sinal de dois pontos e em seguida o valor do atributo:
 
@@ -253,6 +257,8 @@ const user = {
   }
 }
 ```
+
+Para mais exemplos em JSON, <a href="./examples/json">clique aqui!</a>
 <br>
 
 ## Qual dos dois usar?
@@ -263,6 +269,326 @@ Para nosso caso, ao decorrer da explicação, irei utilizar e mostrar os exemplo
 
 Entretanto, posso adicionar posteriormente uma documentação de como trabalhar com XML.
 <br/><br/>
+
+# Consumindo um serviço simples
+
+Bem, depois de muito falar e pouco praticar, vamos botar a mão na massa! (Alguém ainda usa esse termo?)
+
+Nesse início, porém, iremos apenas consumir Serviços de terceiros (serivços feitos por outras pessoas), não os nossos ainda.
+
+Para isso, irei mostrar de forma bem simples como enviar requisições HTTP para APIs (iremos utilizar apenas APIs públicas aqui) e como processar e tratar as respostas dessas requisições. Vou mostrar sempre três exemplos com três linguagens diferentes.
+
+Para essa seção, utilizarei a mesma API para todos os códigos. Essa API vai ser a API do IBGE. Acho ela muito completa e boa de se trabalhar. A princípio, iremos utilizar o seguinte endpoint:
+
+```
+https://servicodados.ibge.gov.br/api/v1/localidades/regioes
+```
+
+Esse endpoint retorna todas as regiões do Brasil. **O objetivo aqui é mostrar, de forma formatada e organizada todas as informações sobre cada região do Brasil**, utilizando a API do IBGE.
+
+Com isso em mente, mão na massa!
+<br/><br/>
+
+## Fazendo requisição com PHP
+
+Essa primeira forma que mostrarei é apenas para exemplificar. Não recomendo usar isso seriamente; existem bibliotecas muito melhores e mais seguras do que fazer da forma como irei mostrar, mas em um primeiro momento, acho bom demonstrar-la aqui.
+
+Para começar, precisamos criar um arquivo `.php`. Nesse repositório, vou criar ele dentro de `./examples/php/consumindo-api` (você pode acessá-lo <a href="./examples/php/consumindo-api/index.php">aqui</a>). Darei também o nome de `index.php` para o arquivo. Tendo feito isso, podemos começar a codificar.
+
+Visando ficar mais didático, vamos criar uma variável chamada `$endpoint` que irá armazenar nosso endpoint (uma url da API) que queremos enviar uma requisição:
+
+```php
+<?php
+
+// Variável que armazena o endpoint 
+$endpoint = 'https://servicodados.ibge.gov.br/api/v1/localidades/regioes';
+```
+
+Esse endpoint é do tipo GET. Sei disso porque está específicado na sua <a href="https://servicodados.ibge.gov.br/api/docs/localidades#api-Regioes-regioesGet">documentação</a>, que especifica as características de cada endpoint, como seu verbo HTTP.
+
+Uma vez tendo nosso endpoint, iremos utilizar a função `file_get_contents()` do PHP. Essa função é utilizada para ler o conteúdo de algum arquivo, como um arquivo `.txt`, por exemplo. Só que ela também serve para realizar requisições HTTP, e é desse modo que nós a iremos usar. Para isso, basta passar nosso endpoint como primeiro parâmetro da função:
+
+```php
+<?php
+
+// Variável que armazena o endpoint 
+$endpoint = 'https://servicodados.ibge.gov.br/api/v1/localidades/regioes';
+
+// Faz uma requisição para o endpoint especificado e armazena sua resposta em $response
+$response = file_get_contents($endpoint);
+```
+
+Com isso, nós estamos fazendo uma requisição (do tipo GET, por padrão) para o endpoint `https://servicodados.ibge.gov.br/api/v1/localidades/regioes` e armazenando a resposta dessa requisição na variável `$response`. Se você pegar essa url, colocar no seu navegador e der enter, vai ver que o que vai aparecer é algo que você já viu e espero que tenha aprendido aqui:
+
+![Acessando endpoint do IBGE diretamente pelo navegador](https://media.discordapp.net/attachments/942819468344713236/1094208174996856863/image.png?width=1200&height=86)
+
+Sim, justamente: um JSON! Bem feio e mal formatado? Sim, mas ainda é um JSON. Na verdade, mais especificamente, isso é um JSON que contém uma lista. Nessa lista estão armazenados outros objetos JSON. Cada um desses objetos (delimitados pelos pares de `{}`) está representando uma região do Brasil com suas características. Como por exemplo o primeiro objeto, que representa a região Norte. Para deixar mais legível, deixa eu organizar melhor:
+
+```json
+{
+  "id": 1,
+  "sigla": "N",
+  "Nome": "Norte"
+},
+// ...
+```
+<br>
+
+## Tratando a resposta da requisição com PHP
+
+Muito massa, né? Porém, nossa variável `$response` ainda não pode ser lida completamente. Isso porque, a função `get_file_contents()` ler o conteúdo do arquivo (nesse caso do nosso endpoint) e transforma ele numa String. Se dermos um `var_dump()` na variável `$response` vamos ver isso com clareza:
+
+```php
+var_dump($response); // Mostra o tipo e o valor da variável
+```
+
+A resposta seria a seguinte:
+
+```
+string(194) "[{"id":1,"sigla":"N","nome":"Norte"},{"id":2,"sigla":"NE","nome":"Nordeste"},{"id":3,"sigla":"SE","nome":"Sudeste"},{"id":4,"sigla":"S","nome":"Sul"},{"id":5,"sigla":"CO","nome":"Centro-Oeste"}]"
+```
+
+Porém, para conseguirmos utilizar a resposta desse endpoint, vamos precisar transformar esse JSON que está no formato de uma String em um objeto PHP.
+
+Nativamente, graças a Deus, o PHP já oferece uma função para fazer isso por nós. Ela se chama `json_decode()`. Como o nome sugere, essa função vai decodificar um JSON que está armazenado em uma String e transformá-lo em um objeto PHP. A partir disso, vamos conseguir utilizar os dados da resposta da requisição (`response`) adequadamente:
+
+```php
+<?php
+
+$endpoint = 'https://servicodados.ibge.gov.br/api/v1/localidades/regioes';
+
+$response = file_get_contents($endpoint);
+
+$regions = json_decode($response);
+```
+
+Aqui, armazenamos a decodificação do JSON de `$response` na variável `$regions`. Se dermos um `var_dump()` em `$regions`, vamos ver que agora sim podemos usar a resposta da requisição:
+
+```
+array(5) {
+  [0]=>
+  object(stdClass)#1 (3) {
+    ["id"]=>
+    int(1)
+    ["sigla"]=>
+    string(1) "N"
+    ["nome"]=>
+    string(5) "Norte"
+  }
+  [1]=>
+  object(stdClass)#2 (3) {
+    ["id"]=>
+    int(2)
+    ["sigla"]=>
+    string(2) "NE"
+    ["nome"]=>
+    string(8) "Nordeste"
+  }
+  [2]=>
+  object(stdClass)#3 (3) {
+    ["id"]=>
+    int(3)
+    ["sigla"]=>
+    string(2) "SE"
+    ["nome"]=>
+    string(7) "Sudeste"
+  }
+  [3]=>
+  object(stdClass)#4 (3) {
+    ["id"]=>
+    int(4)
+    ["sigla"]=>
+    string(1) "S"
+    ["nome"]=>
+    string(3) "Sul"
+  }
+  [4]=>
+  object(stdClass)#5 (3) {
+    ["id"]=>
+    int(5)
+    ["sigla"]=>
+    string(2) "CO"
+    ["nome"]=>
+    string(12) "Centro-Oeste"
+  }
+}
+```
+
+Perceba que `$regions` armazena um array invés de um objeto. Isso acontece justamente porque, se você olhar o JSON do nosso endpoint, vai ver que ele retorna uma lista de objetos, e não um único objeto. Dessa forma, nós temos um array de objetos em PHP que podemos utilizar como bem quisermos.
+
+Agora, é só lógica de programação. Vamos percorrer esse array em um loop (utilizando `foreach`) e exibir nossa mensagem:
+
+```php
+<?php
+
+$endpoint = 'https://servicodados.ibge.gov.br/api/v1/localidades/regioes';
+
+$response = file_get_contents($endpoint);
+
+$regions = json_decode($response); // Exibe uma mensagem e quebra linha
+
+echo "---------------------- Regiões do Brasil ----------------------\n";
+
+// Percorre o array $regions mostrando uma mensagem padrão para todas as regiões
+foreach ($regions as $region)
+{
+    echo "Região " . $region->nome . " tem como sigla " . $region->sigla . " e ID " . $region->id . "\n";
+}
+```
+
+E pronto, é só isso! O código acima é literalmente: um título (Regiões do Brasil) e um laço de repetição do tipo `foreach` que vai pecorrer cada linha do array $regions. Como esse array só contém objetos que possuem os mesmo atributos (nome, sigla e id), então eu coloquei um echo dentro do `foreach` para imprimir uma mensagem informando as informações de cada um dos objetos que está dentro do array; ou seja: cada uma das regiões do Brasil.
+
+A saída disso é:
+
+```
+---------------------- Regiões do Brasil ----------------------
+Região Norte tem como sigla N e ID 1
+Região Nordeste tem como sigla NE e ID 2
+Região Sudeste tem como sigla SE e ID 3
+Região Sul tem como sigla S e ID 4
+Região Centro-Oeste tem como sigla CO e ID 5
+```
+
+### **Utilizando a biblioteca Guzzle**
+
+Na forma mostrada acima, nós utilizamos a função `get_file_contents()` para atuar como cliente HTTP e fazer a nossa requisição. Entretanto, existem alternativas melhores e mais seguras, como utilizar uma biblioteca. No caso do PHP, a biblioteca que eu considero mais famosa e simples de usar, é a Guzzle. Vou mostrar como fazer a mesma requisição acima utlizando ela.
+
+Primeiro de tudo, é preciso instalar ela. Para instalá-la, é preciso ter o `Composer` instalado em sua máquina. Composer é um gerenciador de pacotes. Você pode <a href="https://getcomposer.org/download/">baixá-lo aqui</a> caso ainda não o tenha.
+
+Com o composer instalado, vamos rodar o seguinte comando para iniciar um projeto: `composer init`. Você pode dar enter em todas as perguntas que aparecerem (se quiser responde-las também, fique à vontade), elas não importam muito para o nosso contexto.
+
+Agora, com um projeto iniciado, o Composer terá criado algumas pastas para você. São elas: `src` e `vendor`; além de um arquivo `composer.json`. Esse arquivo serve para configurações do pacote. Ele deve se parecer com isso:
+
+```json
+{
+    "name": "akemi-adam/exemplo",
+    "autoload": {
+        "psr-4": {
+            "AkemiAdam\\Exemplo\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Akemi Adam",
+            "email": "90357785+akemi-adam@users.noreply.github.com"
+        }
+    ],
+    "require": {}
+}
+```
+
+O que importa aqui para nós, é o primeiro e único atributo que está dentro de `"psr-4"`. No meu caso é: `"AkemiAdam\\Exemplo\\"`. Esse nome é o namespace do nosso pacote. Possívelmente estará diferente no seu projeto caso esteja seguindo esse passo a passo, mas o que importa é ter esse nome e reconhece-lo. Esse namespace possibilita que possamos utilizar outras classes de outras pastas em nossos arquivos. Onde essas classes vão ficar? Dentro da pasta `src`.
+
+Vou criar um arquivo na raiz do projeto chamado de `index.php`. Nesse `index.php`, vou colocar a seguinte linha de código:
+
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+```
+
+Com esse `require_once` direcioando para esse arquivo `autoload.php`, vamos poder carregar e usar nossas classes a partir do nosso namespace.
+
+Agora, vamos finalmente baixar o pacote `Guzzle`. Para isso, digite o comando:
+
+```shell
+composer require guzzlehttp/guzzle
+```
+
+Agora, vamos usar essa biblioteca para fazer uma requisição para o nosso endpoint:
+
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use GuzzleHttp\Client;
+
+$client = new Client;
+
+$response = $client->get('https://servicodados.ibge.gov.br/api/v1/localidades/regioes');
+
+$regions = json_decode($response->getBody());
+```
+
+Aqui, nós criamos um objeto `Client` e usamos o método `get()` dessa classe para fazer uma requisição GET para o endpoint passado por parâmetro. Armazenando isso em `$response`, nós fazemos praticamente a mesma coisa que no outro exemplo: passa `$response` como parâmetro de `json_decode()` e guarda em `$regions`. Aqui, no entanto, para pegar os dados da requisição, precisamos usar esse método `getBody()` do objeto `$response`.
+
+Para mostrar a mensagem, iremos criar uma arquivo dentro de `src` chamado `IBGE.php`. O conteúdo desse arquivo será o seguinte:
+
+```php
+<?php
+
+namespace AkemiAdam\Exemplo;
+
+class IBGE
+{
+  /**
+   * Retorna a mensagem formatada
+   */
+  public function toString(stdObject $region) : string
+  {
+      return "Região " . $region->nome . " tem como sigla " . $region->sigla . " e ID " . $region->id . "\n";
+  }
+
+  /**
+   * Imprime a mensagem para todas as regiões
+   */
+  public function showRegions(array $regions) : void
+  {
+    echo "---------------------- Regiões do Brasil ----------------------\n";
+
+    foreach ($regions as $region)
+        echo $this->toString($region);
+  }
+}
+```
+
+Nele, a primeira coisa que fazemos é declarar o namespace, que nesse caso vai ser justamente aquele que eu havia falado. Isso pode variar, como comentei. Enfim: criamos uma classe chamada IBGE e dentro dessa classe criamos a função `toString()` que mostra a mensagem formatada de uma região. Outra função também foi criada: `showRegions`, que mostra a mensagem formatada de todas as regiões passada por parâmetro.
+
+Agora, precisamos usar essa classe no nosso arquivo `index.php`:
+
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Importa a classe Client
+use GuzzleHttp\Client;
+
+// Importa a nossa classe IBGE
+use AkemiAdam\Exemplo\IBGE;
+
+// Instância um objeto do tipo Client
+$client = new Client;
+
+// Faz a requisição GET
+$response = $client->get('https://servicodados.ibge.gov.br/api/v1/localidades/regioes');
+
+// Decodifica o corpo da requisição com os dados
+$regions = json_decode($response->getBody());
+
+// Instância nossa classe IBGE
+$ibge = new IBGE;
+
+// Imprime os dados das regiões
+$ibge->showRegions($regions);
+```
+
+A saída será a mesma que no outro exemplo:
+
+```
+---------------------- Regiões do Brasil ----------------------
+Região Norte tem como sigla N e ID 1
+Região Nordeste tem como sigla NE e ID 2
+Região Sudeste tem como sigla SE e ID 3
+Região Sul tem como sigla S e ID 4
+Região Centro-Oeste tem como sigla CO e ID 5
+```
+<br>
+
+## Fazendo requisição com Node
+
+<br><br>
 
 # Referências
 

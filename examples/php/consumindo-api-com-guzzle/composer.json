@@ -1,0 +1,17 @@
+{
+    "name": "akemi-adam/exemplo",
+    "autoload": {
+        "psr-4": {
+            "AkemiAdam\\Exemplo\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Akemi Adam",
+            "email": "90357785+akemi-adam@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.5"
+    }
+}
