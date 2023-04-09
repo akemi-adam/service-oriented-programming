@@ -1,13 +1,23 @@
 # Resumo
 
 Esse repositório tem como objetivo tentar, de uma forma simples e direta, explicar os conceitos da disciplina de Programação Orientada à Serviços ao passo em que exemplica e documenta os códigos desenvolvidos ou não em sala de aula.
+<br><br>
+
+## Avisos
 
 Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcionamento técnico literal de uma coisa, apenas explicar de uma forma entendível e exemplificar.
+
+Vou tentar sempre usar três exemplos distintos na hora de codificar: um em `php`, outro em `node` e outro em `python`. Se você só souber `php`, só basta ver o exemplo em `php`. Se só sabe `python`, apenas o de `python`. Se sabe tudo e quiser ver tudo, fique à vontade.
+
+Só o que eu quero dizer com isso, é que eu estarei supondo, caso queria acompanhar qualquer que seja o exemplo, que você possua pelo menos uma dessas linguagens instaladas e configuradas em sua máquina.
+
+Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avisar ou corrigir, sinta-se à vontade.
 <br/><br/>
 
 # Sumário
 
 - [Resumo](#resumo)
+  - [Avisos](#avisos)
 - [Sumário](#sumário)
 - [Introdução](#introdução)
   - [O que é um serviço?](#o-que-é-um-serviço)
@@ -25,7 +35,6 @@ Não pretendo me atear as explicações aprofundadas ou seguir a risca o funcion
     - [Utilizando a biblioteca Guzzle](#utilizando-a-biblioteca-guzzle)
   - [Fazendo requisição com Node](#fazendo-requisição-com-node)
   - [Tratando a resposta da requisição com Node](#tratando-a-resposta-da-requisição-com-node)
-    - [Utilizando a biblioteca Axios](#utilizando-a-biblioteca-axios)
   - [Fazendo requisição com Python](#fazendo-requisição-com-python)
   - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
 - [Desenvolvendo um serviço simples](#desenvolvendo-um-serviço-simples)
@@ -588,6 +597,114 @@ Região Centro-Oeste tem como sigla CO e ID 5
 
 ## Fazendo requisição com Node
 
+Antes de prosseguir, por algumas questões técnicas, irei, para esse exemplo, utilizar um outro endpoint. É ele:
+
+```
+https://bible-api.com/Salmos+94:11?translation=almeida
+```
+
+Esse endpoint retorna as informações sobre um versículo específico da bíblia; nesse caso, Salmos 94: 11.
+
+Por que escolhi essa rota? Achei peculiar.
+
+Enfim, vamos prosseguir:
+
+Particularmente, para fazer uma requisição com Node, eu gosto bastante de utilizar a biblioteca `Axios`. Ela é simples e muito fácil de usar, além de ser bem poderosa. Aqui, mostrarei como fazer uma simples requisição GET para o nosso endpoint utilizando essa biblioteca.
+
+No diretório `./examples/node/consumindo-api` desse repositório irei criar um arquivo `index.js`, onde escreveremos nosso código.
+
+Porém, antes de prosseguir, precisamos instalar a biblioteca axios. Para isso, temos que executar o comando:
+
+```
+npm i axios
+```
+
+Após isso, alguns arquivos de `.json` de configuração e uma pasta `node_modules` deve ser criada.
+
+Vamos então abrir o nosso arquivo `index.js` e escrever o seguinte:
+
+```javascript
+// Importa o modulo axios
+const axios = require('axios')
+
+// Armazena nosso endpoint
+const endpoint = 'https://bible-api.com/Salmos+94:11?translation=almeida';
+```
+
+Essas linhas de código são simples: importamos o axios e guardamos na constante de mesmo nome e salvamos nosso endpoint em `endpoint`. Na demais.
+
+Agora, vamos fazer nossa requisição com o objeto `axios`:
+
+```javascript
+const axios = require('axios')
+
+const endpoint = 'https://bible-api.com/Salmos+94:11?translation=almeida';
+
+axios.get(endpoint)
+```
+
+Com isso, nós conseguimos fazer uma requisição do tipo GET para o endpoint específicado. Vejamos agora como podemos processar e tratar isso.
+<br><br>
+
+## Tratando a resposta da requisição com Node
+
+Conseguimos fazer a nossa requisição, porém não estamos fazendo nada com ela, como dá para observar.
+
+Para mudar isso, precisamos entender que o que essa função retorna, é uma `Promisse`. Se você não sabe exatamente o que é uma Promisse, ou não viu ainda a parte de funções assíncronas com `async-await`, não se preocupe, vou tentar explicar de forma resumida e direta.
+
+Uma `Promisse` nada mais é do que uma promessa, como o nome sugere. Essa promessa é um objeto que funciona de forma assíncrona no código. Ou seja: você consegue executar outras partes do código ao mesmo tempo em que essa `Promisse` está sendo "resolvida".
+
+A `Promisse` como objeto tem três estados: `pendente` (quando ela ainda não vou resolvida, ou seja: está pendente), `resolvida` e `rejeitada` (quando ocorre algum erro que impeça ela de ser resolvida).
+
+Quando a `Promisse` é resolvida ou rejeitada, nós podemos usar uma função de `callback` para executar qualquer coisa que quisermos para essas duas situações. Podemos acessar esses estados por meio das funções: `then()` e `catch()`, popularmente chamadas de `thencat`; não é a mesma coisa, mas uma analogia que gosto de fazer é com os blocos `try-catch`. Se a `Promisse` for bem sucedida, a função `then()` vai ser executada; similar com o bloco `try {}`. Já se ela for rejeitada, se ocorrer algum erro, a função `then()` será ignorada e a função `catch()` vai capturar esse erro e ser executada; como o bloco `catch {}`.
+
+Assim sendo, depois dessa breve explicação monóloga sobre programação assíncrona em `JavaScript`, deixa eu mostrar como vamos aplicar isso no nosso código:
+
+```javascript
+const axios = require('axios')
+
+const endpoint = 'https://bible-api.com/Salmos+94:11?translation=almeida';
+
+// A função then() recebe uma função de callback para ser executada quando a Promisse for resolvida
+axios.get(endpoint).then(
+    // Passamos o objeto response para essa callback
+    response => {
+        // Reponse possui os dados da resposta de nossa requisição
+        // Com isso, acessamos a propriedade data desse objeto para guarda o JSON numa variável
+        const versicle = response.data
+    }
+// Caso ocorra alguma falha, o callback da função catch vai ser executado mostrando uma mensagem de erro simples
+).catch(
+    err => console.log(`Ocorreu um error: ${err}`)
+)
+```
+
+Como descrito no próprio código, nossa função then recebe uma arrow function que atua como uma função de callback para ser executada sempre que a `Promisse` for resolvida. Essa nossa `Promisse` possui um objeto `response` que guarda a resposta da nossa requisição; passamos esse objeto como parâmetro do callback. Em seguida, acessamos o atributo `data` do objeto `response` e guardamos ele dentro da constante `versicle`. Esse atributo `data` armazena JSON que o nosso endpoint retorna. Por fim, a função catch está ali para ser executada caso ocorra algum erro com a `Promisse`.
+
+Agora, tudo o que precisamos fazer é, dentro do callback da função then, estruturar nossa mensagem.
+
+```javascript
+axios.get(endpoint).then(
+    response => {
+        const versicle = response.data
+
+        console.log('---------------------- Versículo ----------------------\n')
+
+        console.log(`${versicle.reference} diz:\n${versicle.text}`)
+    }
+).catch(
+    err => console.log(`Ocorreu um error: ${err}`)
+)
+```
+
+Agora, se executarmos esse código com o comando `node index.js`, teremos a seguinte resposta:
+
+```
+---------------------- Versículo ----------------------
+
+Salmos 94:11 diz:
+o Senhor, conhece os pensamentos do homem, que são vaidade.
+```
 <br><br>
 
 # Referências
