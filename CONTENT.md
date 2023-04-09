@@ -310,7 +310,7 @@ Com isso em mente, mão na massa!
 
 Essa primeira forma que mostrarei é apenas para exemplificar. Não recomendo usar isso seriamente; existem bibliotecas muito melhores e mais seguras do que fazer da forma como irei mostrar, mas em um primeiro momento, acho bom demonstrar-la aqui.
 
-Para começar, precisamos criar um arquivo `.php`. Nesse repositório, vou criar ele dentro de `./examples/php/consumindo-api` (você pode acessá-lo <a href="./examples/php/consumindo-api/index.php">aqui</a>). Darei também o nome de `index.php` para o arquivo. Tendo feito isso, podemos começar a codificar.
+Para começar, precisamos criar um arquivo `.php`. Nesse repositório, vou criar ele dentro de `./examples/php/consumindo-api/` (você pode acessá-lo <a href="./examples/php/consumindo-api/index.php">aqui</a>). Darei também o nome de `index.php` para o arquivo. Tendo feito isso, podemos começar a codificar.
 
 Visando ficar mais didático, vamos criar uma variável chamada `$endpoint` que irá armazenar nosso endpoint (uma url da API) que queremos enviar uma requisição:
 
@@ -619,7 +619,7 @@ Enfim, vamos prosseguir:
 
 Particularmente, para fazer uma requisição com Node, eu gosto bastante de utilizar a biblioteca `Axios`. Ela é simples e muito fácil de usar, além de ser bem poderosa. Aqui, mostrarei como fazer uma simples requisição GET para o nosso endpoint utilizando essa biblioteca.
 
-No diretório `./examples/node/consumindo-api` desse repositório irei criar um arquivo `index.js`, onde escreveremos nosso código.
+No diretório `./examples/node/consumindo-api/` desse repositório irei criar um arquivo `index.js`, onde escreveremos nosso código.
 
 Porém, antes de prosseguir, precisamos instalar a biblioteca axios. Para isso, temos que executar o comando:
 
@@ -713,12 +713,107 @@ Agora, se executarmos esse código com o comando `node index.js`, teremos a segu
 Salmos 94:11 diz:
 o Senhor, conhece os pensamentos do homem, que são vaidade.
 ```
-<br><br>
+<br>
 
 ## Fazendo requisição com Python
 
+Agora, com Python, podemos enfim voltar para o nosso tão amado endpoint do IBGE (já estava com saudades):
 
-<br><br>
+```
+https://servicodados.ibge.gov.br/api/v1/localidades/regioes
+```
+
+Como de costume, irei criar um arquivo `index.py` no seguinte diretório desse nosso repositório: `./examples/python/consumindo-api/`. Nesse arquivo, vamos usar o módulo `http.client` para fazer nossas requisições:
+
+```python
+import http.client
+```
+
+Com esse módulo, podemos estabelecer — criar — uma conexão com a API para poder fazer uma requisição ao nosso endpoint:
+
+```python
+import http.client
+
+# Cria uma conexão com a URI base do nosso endpoint
+connection = http.client.HTTPSConnection('servicodados.ibge.gov.br')
+```
+
+Como a API do IBGE usa o protoclo HTTPS (resumidamente o protocolo HTTP que utiliza o protocolo SSL de segurança), precisamos criar uma `HTTPSConnection` com a `URI` base da API.
+
+Com isso, podemos enviar uma requisição para o nosso endpoint usando a função `request()`, tendo em vista que não precisamos escrever toda a `URI`, apenas o path da rota do nosso endpoint:
+
+```python
+import http.client
+
+connection = http.client.HTTPSConnection('servicodados.ibge.gov.br')
+
+# Faz a requisição GET para o nosso endpoint
+connection.request('get', '/api/v1/localidades/regioes')
+```
+<br>
+
+## Tratando a resposta da requisição com Python
+
+Nosso objeto `connection` agora possui a `Response` da requisição armazenado em si. Para recuperar, podemos usar a função `getresponse()`:
+
+```python
+# Recupera a resposta dessa requisição
+response = connection.getresponse()
+```
+
+Response possui um método (função) chamado `read()`, que retorna o JSON do endpoint, que é o que nós queremos. Esse JSON, no entanto, vem como uma String, tal como ocorre lá com PHP. Assim sendo, precisamos importar o módulo `json` para conseguir processar esse JSON em um formato apropriado, nesse caso uma lista. No topo do arquivo, embaixo do primeiro `import`, vamos adicionar outro:
+
+```python
+import http.client
+import json
+```
+
+Seguindo em frente, vamos usar a função `loads()` do objeto json para decodificar nosso JSON:
+
+```python
+import http.client
+import json
+
+connection = http.client.HTTPSConnection('servicodados.ibge.gov.br')
+
+connection.request('get', '/api/v1/localidades/regioes')
+
+response = connection.getresponse()
+
+regions = json.loads(response.read())
+```
+
+Nesse momento, não precisamos mais fazer nenhuma requisição, então podemos fechar a conexão com:
+
+```python
+connection.close()
+```
+
+Dessa forma, tudo o que precisamos fazer agora é passar essa variável `regions`, que armazena uma lista, para um `for` e montar nossa mensagem que vai ser exibida:
+
+```python
+print('--------------------- Regiões do Brasil ----------------------\n')
+
+# Percorre a lista enquanto imprime a mensagem
+for region in regions:
+    print('Região {0} tem como sigla {1} e ID {2}'.format(
+        region['nome'], region['sigla'], region['id']
+    ))
+```
+
+Ao executar `py index.py` no terminal, teremos a seguinte saída:
+
+```
+--------------------- Regiões do Brasil --------------------
+
+Região Norte tem como sigla N e ID 1
+Região Nordeste tem como sigla NE e ID 2
+Região Sudeste tem como sigla SE e ID 3
+Região Sul tem como sigla S e ID 4
+Região Centro-Oeste tem como sigla CO e ID 5
+```
+
+<br>
 
 # Referências
 
@@ -735,6 +830,10 @@ CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com
 GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviços (SOA)? Disponível em: https://www.treinaweb.com.br/blog/voce-sabe-o-que-e-arquitetura-orientada-a-servicos-soa/. Acesso em: 28 mar. 2023.
 
 JSON. Disponível em: https://www.json.org/json-pt.html. Acesso em: 28 mar. 2023.
+
+PYTHON. Biblioteca Padrão do Python: Módulo http.client [recurso eletrônico]. Versão 3. Disponível em: https://docs.python.org/3/library/http.client.html. Acesso em: 08 abr. 2023.
+
+PYTHON. Biblioteca Padrão do Python: Módulo json [recurso eletrônico]. Versão 3. Disponível em: https://docs.python.org/pt-br/3/library/json.html. Acesso em: 08 abr. 2023.
 
 RED HAT. What is a REST API?. Disponível em: https://www.redhat.com/pt-br/topics/api/what-is-a-rest-api. Acesso em: 28 mar. 2023.
 
