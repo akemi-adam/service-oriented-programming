@@ -1,6 +1,12 @@
 # Resumo
 
 Esse repositório tem como objetivo tentar, de uma forma simples e direta, explicar os conceitos da disciplina de Programação Orientada à Serviços ao passo em que exemplica e documenta os códigos desenvolvidos ou não em sala de aula.
+
+## Recomendações
+
+Se você é aluno (ou até se não for) do IFRN, recomendo fortemente se orientar também ou mesmo primariamente pelo repositório oficial da disciplina do professor <a href="https://github.com/ciromdrs">Ciro Morais</a>. Me inspirei muito nele para fazer essa documentação, então acharia muito bom se pudessem ver também o trabalho dele, o cara é bom demais. Podem <a href="https://github.com/ciromdrs/prog-orientada-a-servicos">acessar aqui</a>.
+
+Também há influência da <a href="https://github.com/charlon-156/MySQL">documentação da disciplina de Banco de Dados</a> que meu colega de classe <a href="https://github.com/charlon-156">Charlon Fernandes</a> escreveu.
 <br><br>
 
 ## Avisos
@@ -17,6 +23,7 @@ Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avi
 # Sumário
 
 - [Resumo](#resumo)
+  - [Recomendações](#recomendações)
   - [Avisos](#avisos)
 - [Sumário](#sumário)
 - [Introdução](#introdução)
@@ -669,7 +676,7 @@ const endpoint = 'https://bible-api.com/Salmos+94:11?translation=almeida';
 axios.get(endpoint).then(
     // Passamos o objeto response para essa callback
     response => {
-        // Reponse possui os dados da resposta de nossa requisição
+        // reponse possui os dados da resposta de nossa requisição
         // Com isso, acessamos a propriedade data desse objeto para guarda o JSON numa variável
         const versicle = response.data
     }
@@ -705,6 +712,11 @@ Agora, se executarmos esse código com o comando `node index.js`, teremos a segu
 Salmos 94:11 diz:
 o Senhor, conhece os pensamentos do homem, que são vaidade.
 ```
+<br><br>
+
+## Fazendo requisição com Python
+
+
 <br><br>
 
 # Referências
