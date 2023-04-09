@@ -1,6 +1,7 @@
 # Resumo
 
 Esse repositório tem como objetivo tentar, de uma forma simples e direta, explicar os conceitos da disciplina de Programação Orientada à Serviços ao passo em que exemplica e documenta os códigos desenvolvidos ou não em sala de aula.
+<br><br>
 
 ## Recomendações
 
