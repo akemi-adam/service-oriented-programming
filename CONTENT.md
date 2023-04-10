@@ -37,6 +37,10 @@ Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avi
   - [XML](#xml)
   - [JSON](#json)
   - [Qual dos dois usar?](#qual-dos-dois-usar)
+- [Testando serviços](#testando-serviços)
+    - [Status codes](#status-codes)
+    - [Utilizando cURL](#utilizando-curl)
+    - [Utilizando Postman]($utilizando-postman)
 - [Consumindo um serviço simples](#consumindo-um-serviço-simples)
   - [Fazendo requisição com PHP](#fazendo-requisição-com-php)
   - [Tratando a resposta da requisição com PHP](#tratando-a-resposta-da-requisição-com-php)
@@ -45,14 +49,11 @@ Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avi
   - [Tratando a resposta da requisição com Node](#tratando-a-resposta-da-requisição-com-node)
   - [Fazendo requisição com Python](#fazendo-requisição-com-python)
   - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
-- [Desenvolvendo um serviço simples](#desenvolvendo-um-serviço-simples)
-    - [API simples com PHP](#api-simples-com-php)
-    - [API simples com Node](#api-simples-com-node)
-    - [API simples com Python](#api-simples-com-python)
-- [Testando nossos Serviços](#testando-nossos-serviços)
-    - [Status codes](#status-codes)
-    - [Utilizando cURL](#utilizando-curl)
-    - [Utilizando Postman]($utilizando-postman)
+- [Desenvolvendo nossos serviços](#desenvolvendo-nossos-serviços)
+  - [Projetando nossos serviços](#projetando-nossos-serviços)
+  - [API simples com PHP](#api-simples-com-php)
+  - [API simples com Node](#api-simples-com-node)
+  - [API simples com Python](#api-simples-com-python)
 - [Consumindo nossos Serviços](#consumindo-nossos-serviços)
     - [Consumindo Serviço no lado do Cliente](#consumindo-serviço-no-lado-do-cliente)
       - [DOM](#dom)
@@ -126,7 +127,7 @@ Esse é um dos vários *endpoints* da API do IBGE. Nesse contexto, uma requisiç
 
 ### **Padrão REST**
 
-*Representational State Transfer* (REST) é um padrão de arquitetura baseado no protocolo HTTP. Não vou me aprofundar tanto nesse tópico porque possivelmente não seguiremos esse padrão a risca, entretanto é bom saber que existe e que é nele que iremos nos orientar.
+*Representational State Transfer* (REST) é um padrão de arquitetura baseado no protocolo HTTP.
 
 Sendo um padrão de arquitetura, o REST delimita e específica como devemos desenvolver nossa API.
 
@@ -286,6 +287,93 @@ Para nosso caso, ao decorrer da explicação, irei utilizar e mostrar os exemplo
 
 Entretanto, posso adicionar posteriormente uma documentação de como trabalhar com XML.
 <br/><br/>
+
+# Testando serviços
+
+Algo muito importante de se saber quando está desenvolvendo um *Web Service*/API, é testá-la. Aqui não falo exatamente sobre teste unitários, quem sabe no futuro eu não traga isso, mas me refiro sobre testar se a API está funcionando; se seus endpoints estão todos OKs, por exemplo.
+
+Normalmente, no desenvolvimento web, para ver se uma rota está funcionando, a gente simplesmente só digita a url dela no navegador e ver se a página abre sem nenhum erro. E até dá pra fazer isso com uma rota de API, mas apenas com as rotas do tipo GET. Eu não consigo (normalmente) colocar um endpoint que tem como verbo HTTP o método DELETE no navegador e acessar isso normalmente.
+
+É preciso escrever explicitamente que queremos e como queremos fazer uma requisição desse tipo.
+
+Para isso, existem diversos aplicativos e programas que nos permitem realizar tal função. Logo depois dessa seção, irei mostrar como se consome um serviço a nível de código, para agora quero mostrar como fazer isso por outros meios.
+<br><br>
+
+## Status codes
+
+Mas antes, deixa eu falar sobre uma coisa rapidinho: **status codes**.
+
+Status codes nada mais são do que códigos que informam o status de uma requisição; se ela foi bem sucedida ou não, por exemplo. Esses códigos são sempre números de três digitos que vão do intervalo de 100-599, subdivididos em outros conjuntos que representam determinado contexto. Vejamos uma tabela que exemplifica isso bem:
+
+Conjunto|Significado
+|-|-|
+|100-199|Respostas informativas|
+|200-199|Respotas de sucesso|
+|300-399|Redirecionamentos|
+|400-499|Erros no lado do cliente|
+|500-599|Erros no lado do servidor|
+
+Não se preocupe, não precisa decorar todos eles (até porque não existem necessariamente 100 códigos diferentes para cada categoria). Com o tempo, você vai de uma forma ou de outra assimilar seus valores e seus significados, mas por enquanto não esquenta não. Só estou trazendo isso aqui para mostrar para você diferentes respostas que você pode obter ao realizar uma requisição.
+<br><br>
+
+## Utilizando cURL
+
+O cURL é um software de linha de comando que atua como um cliente de URL (cURL significa mais ou menos isso). Com ele, podemos realizar requisições HTTP (e de diversos outros protocolos) diretamente no terminal. Quer ver um exemplo?
+
+Se você tem Windows de versões mais recentes, deve bastar digitar no terminal (CMD ou PowerShell) isso:
+
+```bash
+curl https://github.com/akemi-adam
+```
+
+A sua resposta com certeza foi inúmeras linhas de HTML puro. Por que isso aconteceu? Porque você fez uma requisição (por padrão do tipo GET) para a URL que eu sugeri e a resposta que essa URL devolve é uma página HTML.
+
+Agora, vamos fazer diferente. Vamos fazer uma requisição para algo que não devolve HTML, mas sim JSON.
+
+```
+curl https://viacep.com.br/ws/01001000/json/
+```
+
+A resposta, dessa vez, foi um objeto JSON assim:
+
+```
+{
+  "cep": "01001-000",
+  "logradouro": "Praça da Sé",
+  "complemento": "lado ímpar",
+  "bairro": "Sé",
+  "localidade": "São Paulo",
+  "uf": "SP",
+  "ibge": "3550308",
+  "gia": "1004",
+  "ddd": "11",
+  "siafi": "7107"
+}
+```
+
+Bem doido, né? O bom, é que podemos fazer requisições de outros métodos, como POST, PUT ou DELETE. Porém, nós vamos testar isso depois.
+<br><br>
+
+## Utilizando Postman
+
+Normalmente, as pessoas não acham muito agradável interagir com o terminal; não é lá muito intuitivo e dinâmico.
+
+Sendo assim, queria mostrar o Postman: um software para contrução e testagem de API. Ele vai atuar como um cliente, tipo o cURL, que realiza requisições para endpoints, tendo uma interface muito mais amigável e usual.
+
+Pressupondo que você tenha o software instalado, para fazer uma requisição, é bem simples: Apertando no `+` da guia superior, você terá a seguinte tela como resultado:
+
+![Tela de nova requisição do Postman](https://media.discordapp.net/attachments/942819468344713236/1094939172093050941/image.png?width=1200&height=278)
+
+Nessa interface, podemos escolher o método que queremos utilizar na nossa requisição, o endpoint ao qual a requisição será feita e diversos outras configurações, como parâmetros, tokens de autorização etc.
+
+Aqui, nós vamos apenas deixar o método como GET e colocar o mesmo endpoint de anteriormente. Após isso, podemos apertar em `Send` e enviar.
+
+A resposta será essa:
+
+![Resposta da requisição](https://media.discordapp.net/attachments/942819468344713236/1094941564612128869/image.png?width=1200&height=308)
+
+Mais adiante, usaremos ambas as ferramentas (dando mais prioridade ao cURL pela sua democratização) para testar os endpoints dos *Web Services* que iremos desenvolver.
+<br><br>
 
 # Consumindo um serviço simples
 
@@ -639,7 +727,7 @@ const axios = require('axios')
 const endpoint = 'https://bible-api.com/Salmos+94:11?translation=almeida';
 ```
 
-Essas linhas de código são simples: importamos o axios e guardamos na constante de mesmo nome e salvamos nosso endpoint em `endpoint`. Na demais.
+Essas linhas de código são simples: importamos o axios e guardamos na constante de mesmo nome e salvamos nosso endpoint em `endpoint`.
 
 Agora, vamos fazer nossa requisição com o objeto `axios`:
 
@@ -662,7 +750,7 @@ Para mudar isso, precisamos entender que o que essa função retorna, é uma `Pr
 
 Uma `Promisse` nada mais é do que uma promessa, como o nome sugere. Essa promessa é um objeto que funciona de forma assíncrona no código. Ou seja: você consegue executar outras partes do código ao mesmo tempo em que essa `Promisse` está sendo "resolvida".
 
-A `Promisse` como objeto tem três estados: `pendente` (quando ela ainda não vou resolvida, ou seja: está pendente), `resolvida` e `rejeitada` (quando ocorre algum erro que impeça ela de ser resolvida).
+A `Promisse` como objeto tem três estados: `pendente` (quando ela ainda não foi resolvida, ou seja: está pendente), `resolvida` e `rejeitada` (quando ocorre algum erro que impeça ela de ser resolvida).
 
 Quando a `Promisse` é resolvida ou rejeitada, nós podemos usar uma função de `callback` para executar qualquer coisa que quisermos para essas duas situações. Podemos acessar esses estados por meio das funções: `then()` e `catch()`, popularmente chamadas de `thencat`; não é a mesma coisa, mas uma analogia que gosto de fazer é com os blocos `try-catch`. Se a `Promisse` for bem sucedida, a função `then()` vai ser executada; similar com o bloco `try {}`. Já se ela for rejeitada, se ocorrer algum erro, a função `then()` será ignorada e a função `catch()` vai capturar esse erro e ser executada; como o bloco `catch {}`.
 
@@ -815,6 +903,33 @@ Região Centro-Oeste tem como sigla CO e ID 5
 
 <br>
 
+# Desenvolvendo nossos serviços
+
+Finalmente, chegamos na parte que eu tanto queria. Possívelmente a parte mais demorada, mas a que eu acho mais legal. Depois de vermos como consumir uma API de terceiros, que tal ver como uma API funciona, construíndo uma?!
+
+Só bora.
+
+Porém, preciso explicar algumas coisas primeiro.
+
+Eu irei mostrar três exemplos em três linguagens (PHP, Node e Python). Só que nossas APIs não vão desenvolvidadas puramente nessas linguagens. Vamos utilizar alguns frameworks, porque eu não sou psicopata ainda de escrever tudo na mão do zero; então vamos facilitar nossa vida.
+
+Já adianto que você não precisa necessariamente saber esses frameworks (até porque somente um dos que eu vou usar aqui eu realmente tenho costume). Tudo o que eu peço, é que você tente entender a lógica do sistema e principalmente: a lógica de funcionamento de uma API. Você entendendo os conceitos chaves e como eles normalmente são aplicados, já é o suficiente e já vale muito.
+
+Outra coisa: diferente dos outros exemplos que eu apliquei (ou tentei aplicar) o mesmo endpoint para diferentes linguagens, aqui vamos ter o planejamento de um sistema que vai ser dividido em partes diferentes e independentes e cada uma das nossas APIs vão ficar responsáveis por uma parte. Por que quero fazer isso? Para mostrar o baixo acoplamento e a independência que conseguimos obter quando programamos nesse paradigma de orientação à serviços.
+<br><br>
+
+## Projetando nossos serviços
+
+Para desenvolver nossos serviços, vou utilizar o exemplo de um catálogo de peixes. Sim, isso mesmo. Foi a primeira coisa não covencional que eu consegui pensar.
+
+```mermaid
+flowchart BT
+  A[API Express]
+  B[API Flask]
+  C[API Lumen]
+  B & C --> A
+```
+
 # Referências
 
 ACCURATE. API e Web Service: entenda as diferenças. Disponível em: https://blog.accurate.com.br/api-e-web-service/. Acesso em: 28 mar. 2023.
@@ -830,6 +945,8 @@ CLOUDFLARE. What is an API endpoint?. Disponível em: https://www.cloudflare.com
 GUEDES, Marylene. TreinaWeb. Você sabe o que é arquitetura orientada a serviços (SOA)? Disponível em: https://www.treinaweb.com.br/blog/voce-sabe-o-que-e-arquitetura-orientada-a-servicos-soa/. Acesso em: 28 mar. 2023.
 
 JSON. Disponível em: https://www.json.org/json-pt.html. Acesso em: 28 mar. 2023.
+
+MOZILLA DEVELOPER NETWORK. HTTP Status. Disponível em: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status. Acesso em: 08 abr. 2023.
 
 PYTHON. Biblioteca Padrão do Python: Módulo http.client [recurso eletrônico]. Versão 3. Disponível em: https://docs.python.org/3/library/http.client.html. Acesso em: 08 abr. 2023.
 
