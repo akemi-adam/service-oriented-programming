@@ -927,7 +927,8 @@ Já as outras duas APIs vão ser serviços que vão efetuar CRUDs. Teremos, ness
 De forma simples, a comunicação do nosso sistema seria essa:
 
 ```mermaid
-A[API Express / Auth]
+flowchart
+  A[API Express / Auth]
   B[API Flask / CRUD Peixes]
   C[API Lumen / CRUD Posts]
   B & C --> A
