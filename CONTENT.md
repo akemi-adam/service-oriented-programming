@@ -51,9 +51,7 @@ Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avi
   - [Tratando a resposta da requisição com Python](#tratando-a-resposta-da-requisição-com-python)
 - [Desenvolvendo nossos serviços](#desenvolvendo-nossos-serviços)
   - [Projetando nossos serviços](#projetando-nossos-serviços)
-  - [API simples com PHP](#api-simples-com-php)
-  - [API simples com Node](#api-simples-com-node)
-  - [API simples com Python](#api-simples-com-python)
+  - [API para autenticação com Express](#api-para-autenticação-com-express)
 - [Consumindo nossos Serviços](#consumindo-nossos-serviços)
     - [Consumindo Serviço no lado do Cliente](#consumindo-serviço-no-lado-do-cliente)
       - [DOM](#dom)
@@ -922,13 +920,55 @@ Outra coisa: diferente dos outros exemplos que eu apliquei (ou tentei aplicar) o
 
 Para desenvolver nossos serviços, vou utilizar o exemplo de um catálogo de peixes. Sim, isso mesmo. Foi a primeira coisa não covencional que eu consegui pensar.
 
+Logo, vamos estabeler o seguinte: Teremos três APIs. Uma dessas APIs, vai ser responsável por criar e autenticar usuário. As outras duas APIs vão precisar sempre chamar essa API para autenticar nossos endpoints. Não se preocupe, ao longo do desenvolvimento, vou detalhar melhor como cada coisa vai funcionar.
+
+Já as outras duas APIs vão ser serviços que vão efetuar CRUDs. Teremos, nesse projeto, um CRUD para o modelo de publicações/posts e um para o modelo de peixes (Fishes).
+
+De forma simples, a comunicação do nosso sistema seria essa:
+
 ```mermaid
-flowchart BT
-  A[API Express]
-  B[API Flask]
-  C[API Lumen]
+A[API Express / Auth]
+  B[API Flask / CRUD Peixes]
+  C[API Lumen / CRUD Posts]
   B & C --> A
 ```
+
+Já os modelos do banco de dados será esse:
+
+```mermaid
+erDiagram
+  users {
+      int id
+      varchar(255) name
+      varchar(255) email
+      varchar(245) password
+  }
+
+  fishes {
+      int id
+      varchar(255) specie
+      decimal size
+      int user_id
+  }
+
+  posts {
+      int id
+      text content
+      int user_id
+  }
+
+  users ||--o{ fishes : OneToMany
+
+  users ||--o{ posts : OneToMany
+```
+
+Os relacionamentos marcados como `OneToMany` represetam relacionamentos 1:N. Caso você ainda não entenda dessa arquitetura de modelagem de banco de dados, no início dessa documentação eu deixei linkado um repositório que trata sobre isso.
+<br><br>
+
+## API para autenticação com Express
+
+Vamos começar pelo o que eu considero mais chato mas essencial: nosso sistema de autenticação.
+<br><br>
 
 # Referências
 
