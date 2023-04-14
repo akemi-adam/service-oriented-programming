@@ -1362,23 +1362,511 @@ erDiagram
   }
 ```
 
-  posts {
-      int id
-      text content
-      int user_id
-  }
+Já os endpoints que essa API irá disponibilizar, vão ser os seguintes:
 
-  users ||--o{ fishes : OneToMany
+|Método|Endpoint|Descrição|
+|-|-|-|
+|GET|http://localhost:8000/fish|Lista todos os peixes|
+|POST|http://localhost:8000/fish|Salva um peixe no banco|
+|GET|http://localhost:8000/fish/{id}|Mostra um peixe específico|
+|PUT|http://localhost:8000/fish/{id}|Atualiza um peixe|
+|DELETE|http://localhost:8000/fish/{id}|Deleta um peixe|
 
-  users ||--o{ posts : OneToMany
-```
-
-Os relacionamentos marcados como `OneToMany` represetam relacionamentos 1:N. Caso você ainda não entenda dessa arquitetura de modelagem de banco de dados, no início dessa documentação eu deixei linkado um repositório que trata sobre isso.
+Com isso definido, vamos programar.
 <br><br>
 
-## API para autenticação com Express
+### **Configurando nosso projeto FastAPI**
 
-Vamos começar pelo o que eu considero mais chato mas essencial: nosso sistema de autenticação.
+Como esse é um projeto Python, vou seguir as boas práticas de desenvolver nossa aplicação em um ambiente virtual, utilizando o comando `python -m venv <nome do ambiente>` para criá-lo. Se não quiser trabalhar assim, pode só criar um diretório para o projeto e instalar o FastAPI.
+
+Mas, supondo que você está comigo nessa, depois de executar o primeiro comando, vamos criar uma pasta dentro do ambiente virtual e executar o seguinte comando para ativar a virtualização (o caminho do comando pode ser relativo dependendo da pasta onde você esteja):
+
+```
+// Para o CMD
+
+<Caminho relativo>\Scripts\activate
+
+// Para o PowerShell
+
+<Caminho relativo>\Scripts\activate.ps1
+```
+
+Agora o nosso terminal está num ambiente virtualizado, separado de nossa máquina física, onde os módulos que sabemos que provavelmente não ocorrerá conflitos de módulos.
+
+Bem, no diretório do nosso projeto, vamos utilizar os seguintes comandos para instalar o FastAPI:
+
+```bash
+pip install fastapi
+```
+
+Além disso, vamos precisar do `uvicorn` para subir o servidor de desenvolvimento:
+
+```bash
+pip install "uvicorn[standard]"
+```
+
+Dessa forma, já podemos criar um arquivo `main.py` na raiz do projeto. Inicialmente, esse será o escopo do arquivo:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get('/')
+async def root():
+  return {
+    'message': 'Testando nossa API'
+  }
+```
+
+Para ver se está funcionando, vamos subir o servidor com:
+
+```bash
+uvicorn main:app --reload --port=5000
+```
+
+Escolhi a porta 5000 para diferenciar da outra API.
+
+Vamos então fazer uma requisição simples GET em cURL mesmo:
+
+```bash
+curl http://localhost:5000/
+```
+
+A resposta será essa:
+
+```json
+{"message": "Testando nossa API"}
+```
+
+Vendo que está tudo funcionando, vamos configurar nosso banco de dados agora.
+
+### **Models FastAPI**
+
+Para criar nosso modelo de peixe (Fish), precisamos estabelecer a conexão com o nosso banco de dados antes. Uma vez que usaremos SQLite, vamos criar um arquivo `database.db` na raiz do projeto, sem nada dentro. Após isso, vamos criar agora um arquivo `database.py`.
+
+Mas antes, vamos instalar um ORM para conseguir trabalhar com o banco de dados como objetos. O pacote é o `SQLAlchemy`:
+
+```bash
+pip install SQLAlchemy
+```
+
+Voltando para o arquivo `database.py`, vamos escrever a seguinte estrutura:
+
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker, declarative_base
+
+# Configura o banco
+engine = create_engine('sqlite:///database.db')
+
+# Cria uma sessão com o banco
+LocalSession = sessionmaker(autoflush=False, bind=engine)
+
+# Classe básica para mapear os modelos com as tabelas
+Base = declarative_base()
+
+# Retorna instância e retorna a sessão local
+def get_connection() -> Session:
+  connection = LocalSession()
+
+  return connection
+```
+
+O que está acontecendo aqui é o seguinte: em `engine = create_engine('sqlite:///database.db')`, estamos configurando o nosso banco de dados; como nesse caso estamos usando SQLite, tudo que precisamos é indicar o caminho do arquivo que servirá como banco após `///`.
+
+Depois, criamos uma sessão. Aqui, confesso que não estudei o ORM a fundo para afirmar que sessão seria o equivalente a uma conexão como quando estamos usando `JDBC` ou `PDO`, mas, assim como a conexão, será a partir do objeto dessa sessão que iremos executar e confirmar nossas alterações no banco. Essa parte relativa a criação da sessão se refere ao seguinte código:
+
+```python
+LocalSession = sessionmaker(autoflush=False, bind=engine)
+```
+
+Depois, criamos uma classe `Base` que vai ser usada para mapear nossos modelos, associando-os às tabelas do nosso banco.
+
+```python
+# Classe básica para mapear os modelos com as tabelas
+Base = declarative_base()
+```
+
+Por enquanto, não vamos mexer nisso.
+
+Seguindo em frente, logo a frente há a declaração de uma função, que serve para retornar nossa sessão (que aqui eu adotei o nome de conexão por ser mais intuitivo ao meu ver):
+
+```python
+def get_connection() -> Session:
+  connection = LocalSession()
+
+  return connection
+```
+
+Com isso pronto, podemos enfim de fato começar a criar nossos modelos (nesse caso, apenas o modelo de peixes). Para isso, vamos criar um arquivo `models.py` com o seguinte código:
+
+```python
+from sqlalchemy import Column, Integer, String, DECIMAL
+from database import Base
+
+
+class Fish(Base):
+  __tablename__ = 'fishes'
+
+  id = Column(Integer, primary_key=True)
+
+  specie = Column(String, nullable=False)
+
+  size = Column(DECIMAL, nullable=True)
+
+  def __init__(self, specie, size):
+    self.specie = specie
+
+    self.size = size
+```
+
+Basciamente, o que está acontecendo aqui é o seguinte: Definimos uma classe `Fish` que herda daquela classe `Base` lá do `database.py`, com o intuito de conseguir fazer o mapeamento objeto-relacional. Depois, definimos um atributo `__tablename__` que vai receber o nome da nossa tabela (nesse caso, o plural de `fish` é `fishes`). Depois, declaramos as colunas da nossa tabela como atributos da classe; `id` é a primary-key, `specie` é um `varchar` que representa a espécie e `size` é o tamanho que está em `decimal`.
+
+Após isso, criamos um construtor que vai inicializar esses atributos em um objeto Fish, para que posteriormente possamos fazer as operações do banco de dados a partir desse objeto.
+
+Vamos agora criar nossos endpoints.
+<br><br>
+
+### **Roteamento FastAPI**
+
+Anteriormente eu criei um endpoint apenas para testar se a aplicação estava funcionando. Ele tinha como path a rota raíz (`/`). Agora, se quiser, já pode excluir ele.
+
+A primeira rota que iremos definir no nosso `main.py` será a rota `/fish` do tipo GET. Essa rota devolve uma lista em JSON com todos os peixes. Mas antes, precisamos importar os seguintes módulos para o nosso arquivo:
+
+```python
+from fastapi import FastAPI, HTTPException, Depends
+
+from sqlalchemy.orm import Session
+
+from models import Fish
+from database import get_connection, Base, engine
+```
+
+O `FastAPI` já estava importado, mas os outros ainda não. Agora, com isso, precisamos ainda fazer uma última configuração do banco de dados. Logo após a declaração do nosso objeto `app`, vamos instruir o nosso `ORM` a criar as tabelas do banco baseado nos nossos modelos. Nesse caso, só vai criar a tabela de peixes. O código seria esse:
+
+```python
+# Objeto da aplicação
+app = FastAPI()
+
+# Cria as tabelas baseado nos modelos
+Base.metadata.create_all(bind=engine)
+```
+
+Agora, podemos criar a rota que devolve uma lista de todos os peixes:
+
+```python
+@app.get('/fish', status_code=200)
+async def list_all_fishes(connection: Session = Depends(get_connection)):
+
+  # Faz uma query que devolve todos os dados da tabela fishes
+  fishes = connection.query(Fish).all()
+
+  # Fecha a conexão
+  connection.close()
+
+  return fishes
+```
+
+Beleza, o que está acontecendo aqui? Simples. Em:
+
+```python
+@app.get('/fish', status_code=200)
+```
+
+Definimos o caminho da rota (`/fish`) e dizemos qual é o status code esperado ao fazer uma requisição para essa rota, que nesse caso será 200. 
+
+Depois, definimos uma função (assíncrona) que é justamente a função da rota. Ao nome dessa função, dei `list_all_fishes`, algo mais intuitivo, já que aqui o nome não importa muito. Agora, o interessante vem a seguir, nos argumentos dessa função:
+
+```python
+@app.get('/fish', status_code=200)
+async def list_all_fishes(connection: Session = Depends(get_connection)):
+```
+
+Note que só temos um único parâmetro, que é justamente a conexão com o banco de dados. Essa conexão, no entendo, está definida para ser uma dependência dessa rota.. Estamos, dessa forma, fazendo uma injeção de dependência e delegando assim a responsabilidade de criar a conexão do nosso banco de dados para o framework. Em resumo: a partir desse parâmetro `connection` nós poderemos interagir com o nosso banco de dados.
+
+Indo para o restante da função, temos o seguinte:
+
+```python
+# Faz uma query que devolve todos os dados da tabela fishes
+fishes = connection.query(Fish).all()
+
+# Fecha a conexão
+connection.close()
+
+return fishes
+```
+
+Em `fishes` nós armazenamos o resultado de uma query que devolve todos os dados da tabela fishes.
+
+Depois, fechamos a conexão e enfim retornamos a lista em `fishes`. Essa lista virá como um JSON. Vamos testar. Incie o servidor:
+
+```bash
+uvicorn main:app --reload --port=5000
+```
+
+Agora, vamos fazer a requisição:
+
+![Requisição para o endpoint que lista os peixes](https://media.discordapp.net/attachments/942819468344713236/1096056211071311902/image.png?width=1200&height=533)
+
+Veja que o resultado foi um array vazio, uma vez que nós não criamos nenhum registro na tabela.
+
+Para isso, precisamos criar nosso endpoint que cadastra um novo peixe. De volta ao `main.py`, vamos adicionar a seguinte nova rota:
+
+```python
+@app.post('/fish', status_code=201)
+async def store_fish(fish_body: FishCreate, connection: Session = Depends(get_connection)):
+
+  fish = Fish(specie=fish_body.specie, size=fish_body.size)
+
+  connection.add(fish)
+
+  try:
+    connection.commit()
+
+    connection.refresh(fish)
+
+  except HTTPException as e:
+    connection.rollback()
+
+    raise HTTPException(status_code=500, detail=str(e))
+
+  finally:
+    connection.close()
+
+  return {
+    'fish': fish,
+    'status': True
+  }
+```
+
+Veja que essa rota já é maior. Note também que além do parâmetro `connection`, que eu já expliquei, há um parâmetro `fish_body` que é do tipo `FishCreate`. FisheCreate é uma classe que nós iremos criar agora, lá dentro de `models.py`:
+
+```python
+class FishCreate(BaseModel):
+  specie: str
+
+  size: float | None = None
+```
+
+Importe também, no início do arquivo a classe `BaseModel`:
+
+```python
+from pydantic import BaseModel
+```
+
+O FastAPI tem um recurso que se chama models, mas não são os models de banco de dados, mas sim um model para o body de uma requisição. Isso serve para especificar quais dados estamos esperando que sejam enviados com a requisição e os seus tipos, fazendo uma validação simples de tipos.
+
+Por exemplo: `specie` é uma String. Logo, se um inteiro for enviado como valor de `specie`, uma mensagem de erro vai ser devolvida.
+
+Agora, depois de termos criado nosso Model para o body da request, voltemos à rota:
+
+```python
+@app.post('/fish', status_code=201)
+async def store_fish(fish_body: FishCreate, connection: Session = Depends(get_connection)):
+```
+
+Perceba que aqui, invés de usarmos `@app.get`, estamos usando `@app.post`, já que essa rota é do tipo POST. O path será o mesmo (`/fish`) e o `status_code` vai ser `201` pois o esperado é que, a partir desse endpoint, vamos conseguir criar um novo recurso com sucesso.
+
+Voltando aos parâmetros, agora o `fish_body: FishCreate` faz sentido. Estamos definindo explicitamente quais e como os dados serão validados. Como esse objeto representa praticamente a `request` (tipo o objeto `Request $request` do Laravel), será a partir dele que vamos interagir com os dados do body da requisição.
+
+Continuemos a dissecar a função.
+
+```python
+# Cria objeto Fish baseado nos dados da requisição (fish_body)
+fish = Fish(specie=fish_body.specie, size=fish_body.size)
+
+# Adiciona o objeto a sessão do banco de dados
+connection.add(fish)
+
+try:
+  # Confirma a inserção
+  connection.commit()
+
+  # Atualiza o objeto fish para ter o seu id como atributo
+  connection.refresh(fish)
+
+except HTTPException as e:
+  # Reverte todas as mudanças feitas caso ocorra algum erro
+  connection.rollback()
+
+  raise HTTPException(status_code=500, detail=str(e))
+
+finally:
+  # Fecha a conexão
+  connection.close()
+
+# Retorna um JSON contendo o objeto fish
+return {
+  'fish': fish,
+  'status': True
+}
+```
+
+Como indicado nos comentários, o que acontece é o seguinte: primeiro criamos um objeto `Fish` com base nos dados da requisição. Depois, adicionamos esse objeto a sessão do banco de dados. Dentro do `try`, tentamos confirmar essa mudança com a função `conmmit()`; é aqui que de fato salvamos o dado no banco. Depois, atualizamos o objeto com `refresh()` para que ele possa ter o seu `id` que foi dado ao salvá-lo no banco.
+
+Caso ocorra alguma exceção, a função `rollback()` reverte todas as mudanças que tinham sido feitas e uma mensagem de erro é lançada.
+
+No bloco `finnaly` a conexão com o banco de dados é fechada.
+
+Por fim, um JSON contendo o peixe criado é retornado. Vamos testar isso:
+
+![Requisição para o endpoint que cria um novo peixe](https://media.discordapp.net/attachments/942819468344713236/1096107112347729999/image.png?width=1200&height=551)
+
+Com isso podemos testar nossa rota que mostra uma lista de todos os peixes:
+
+![Lista com todos os peixes](https://media.discordapp.net/attachments/942819468344713236/1096108718992654376/image.png?width=1200&height=567)
+
+Seguindo em frente, vamos definir nosso endpoint que irá resgatar um peixe em específico:
+
+```python
+@app.get('/fish/{id}', status_code=200)
+async def find_fish(id: int, connection: Session = Depends(get_connection)):
+  # Recupera o primeiro peixe na tabela que tenha um id igual ao id
+  # passado por parâmetro
+  fish = connection.query(Fish).filter(Fish.id == id).first()
+
+  # Verifica se o modelo não existe e retorna uma exceção caso não existe
+  if not fish:
+    raise HTTPException(status_code=404, detail='Nenhum peixe foi encontrado')
+
+  # Fecha a conexão
+  connection.close()
+
+  # Retorna o peixe
+  return fish
+```
+
+Para esse tipo de rota, nós precisamos do `id` do peixe específico que queremos resgatar. Para isso, vamos, no path do endpoint, declarar um parâmetro de rota id: `/fish/{id}`. Esse parâmetro também precisará ser explicitamente declarado como um argumento da nossa função. Aqui, ele é o primeiro parâmetro da função: `id: int`.
+
+Depois, nós chamamos esse encadeamento de funções: `connection.query(Fish).filter(Fish.id == id).first()`. Isso é o equivalente a um `SELECT * FROM fishes WHERE id = <id do peixe>`. Estamos pegando o primeiro (e único) peixe que possui o id igual ao id que passamos por parâmetro na rota. O resultado disso é salvo na variável `fish`.
+
+Em seguida, há um if que verifica se o objeto `fish` não existe. Se ele não existir, uma exceção dizendo que o modelo não pôde ser encontrado será lançada.
+
+O resto da função é apenas o fechamento da conexão e o retorno do objeto. Podemos fazer o seguinte teste:
+
+![Endpoint que retorna um peixe específico](https://media.discordapp.net/attachments/942819468344713236/1096114807368855562/image.png?width=1200&height=480)
+
+Falta pouco agora, só mais duas rotas. Let's go!
+
+Vamos criar o endpoint que faz a atualização de um peixe. Mas antes de definir a rota, dentro de `models.py`, vamos criar o modelo do `body` da requisição que atualiza, uma vez que ele é diferente daquele que cria no sentido de que eu posso querer atualizar somente um dado da requisição, não necessariamente todos. Vamos criar ele então.
+
+No início do arquivo, adicione:
+
+```python
+from typing import Optional
+```
+
+Depois, crie a classe:
+
+```python
+class FishUpdate(BaseModel):
+  specie: Optional[str] = None
+
+  size: Optional[str] = None
+```
+
+Com essa classe, estamos dizendo que o corpo da requisição pode ou não ter os um campo de `specie` e um de `size`.
+
+Agora, vamos voltar para o arquivo `main.py`, lembrando de importar no inicío do arquivo a nossa classe `FishUpdate`.
+
+Vamos criar nossa rota finalmente:
+
+```python
+@app.put('/fish/{id}', status_code=200)
+async def update_fish(id: int, fish_body: FishUpdate, connection: Session = Depends(get_connection)):
+
+  # Recupera o peixe
+  fish = connection.query(Fish).filter(Fish.id == id).first()
+
+  # Verifica se o peixe não existe
+  if not fish:
+    raise HTTPException(status_code=404, detail='Nenhum peixe foi encontrado')
+
+  # Verifica se o campo specie existe para atualizar
+  if fish_body.specie:
+    fish.specie = fish_body.specie
+
+  # Verifica se o campo size existe para atualizar
+  if fish_body.size:
+    fish.size = fish_body.size
+
+  try:
+    # Salva as alterações
+    connection.commit()
+
+    # Atualiza o objeto fish
+    connection.refresh(fish)
+
+  except HTTPException as e:
+    # Refaz todas as alterações feitas na sessão caso ocorra alugm erro
+    connection.rollback()
+
+    raise HTTPException(status_code=500, detail=str(e))
+
+  finally:
+    # Fecha a conexão
+    connection.close()
+
+  # Retorna o peixe
+  return {
+    'fish': fish,
+    'status': True,
+  }
+```
+
+Aquie é quase a mesma coisa que a rota anterior, mas invés de `@app.get` usamos `@app.put`, já que a rota tem o propósito de atualizar um recurso. O que importa aqui são os dois `if's` que verificam se na requisição existem os campos especificados. Se, por exemplo, `if fish_body.size` existir, então o valor desse atributo será atribuído ao atributo `size` do objeto `fish`, como mostrado em `fish.size = fish_body.size`.
+
+Testando isso, temos o seguinte:
+
+![Testando endpoint que atualiza um recurso](https://media.discordapp.net/attachments/942819468344713236/1096536398414221432/image.png?width=1200&height=535)
+
+Por último, e mais simples, temos o endpoint que deleta um peixe. Para ele, só precisamos escrever uma rota do tipo DELETE com `@app.delete`. Novamente no nosso arquivo principal, podemos adicionar o seguinte:
+
+```python
+@app.delete('/fish/{id}', status_code=200)
+async def destroy_fish(id: int, connection: Session = Depends(get_connection)):
+
+  # Recupera o peixe do banco
+  fish = connection.query(Fish).filter(Fish.id == id).first()
+
+  # Verifica se o peixe não existe
+  if not fish:
+    raise HTTPException(status_code=404, detail='Nenhum peixe foi encontrado')
+
+  try:
+    # Deleta o peixe do banco
+    connection.delete(fish)
+
+    # Confirma essa mudança
+    connection.commit()
+
+  except HTTPException as e:
+    # Refaz todas as alterações caso haja algum erro
+    connection.rollback()
+
+    raise HTTPException(status_code=500, detail=str(e))
+
+  finally:
+    # Fecha a conexão
+    connection.close()
+
+  # Retorna uma mensagem informando que o peixe foi deletado com sucesso
+  return {
+    'message': 'Peixe deletado com sucesso!',
+    'status': True
+  }
+```
+
+Tal como nos outros exemplos, nós recuperamos o peixe com base no id passado pela rota e então deletamos esse modelo do banco através do trecho `connection.delete(fish)`. Testemos agora:
+
+![Endpoint que deleta um peixe](https://media.discordapp.net/attachments/942819468344713236/1096579040028131399/image.png?width=1200&height=531)
+
+Para dizer que não estou mentindo, vamos fazer uma requisição para o endpoint `/fish` do método GET, que retorna a lista de peixes:
+
+![Provando que não estou mentindo](https://media.discordapp.net/attachments/942819468344713236/1096579114888073259/image.png?width=1200&height=512)
+
+Com isso, criamos uma API bem simples que realiza um CRUD de um modelo básico. A seguir, vou mostrar como consumir uma API com JavaScript vanilla (puro, sem nenhuma SPA) para podermos utilizar essa API através de uma interface gráfica com a qual o cliente consiga interagir.
 <br><br>
 
 # Referências
