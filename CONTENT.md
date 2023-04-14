@@ -914,52 +914,453 @@ Região Centro-Oeste tem como sigla CO e ID 5
 
 Finalmente, chegamos na parte que eu tanto queria. Possívelmente a parte mais demorada, mas a que eu acho mais legal. Depois de vermos como consumir uma API de terceiros, que tal ver como uma API funciona, construíndo uma?!
 
-Só bora.
+Aqui, iremos desenvolver duas APIs primeiramente: uma em PHP (utilizando o framework **Lumen**) e outra em Python (com **FastAPI**). Já adianto que não precisa ser expert ou mesmo saber algum desses frameworks. Eu particularmente nunca havia programando nessas duas tecnologias antes, mas só quero que vocês vejam os princípios e as coisas em comum que nossas APIs terão.
 
-Porém, preciso explicar algumas coisas primeiro.
-
-Eu irei mostrar três exemplos em três linguagens (PHP, Node e Python). Só que nossas APIs não vão desenvolvidadas puramente nessas linguagens. Vamos utilizar alguns frameworks, porque eu não sou psicopata ainda de escrever tudo na mão do zero; então vamos facilitar nossa vida.
-
-Já adianto que você não precisa necessariamente saber esses frameworks (até porque somente um dos que eu vou usar aqui eu realmente tenho costume). Tudo o que eu peço, é que você tente entender a lógica do sistema e principalmente: a lógica de funcionamento de uma API. Você entendendo os conceitos chaves e como eles normalmente são aplicados, já é o suficiente e já vale muito.
-
-Outra coisa: diferente dos outros exemplos que eu apliquei (ou tentei aplicar) o mesmo endpoint para diferentes linguagens, aqui vamos ter o planejamento de um sistema que vai ser dividido em partes diferentes e independentes e cada uma das nossas APIs vão ficar responsáveis por uma parte. Por que quero fazer isso? Para mostrar o baixo acoplamento e a independência que conseguimos obter quando programamos nesse paradigma de orientação à serviços.
+Depois disso, iremos fazer algo mais complexo juntando nossos serviços, mas por enquanto, se atente apenas nos princípios que aprendeu até aqui e na aplicação deles.
 <br><br>
 
-## Projetando nossos serviços
+## API simples com PHP
 
-Para desenvolver nossos serviços, vou utilizar o exemplo de um catálogo de peixes. Sim, isso mesmo. Foi a primeira coisa não covencional que eu consegui pensar.
+Como estamos utilizando o padrão REST, nossa API vai seguir esse padrão. Em, novamente, devo dizer: vamos tentar sempre seguir os princípios de visibilidade das requisições HTTP, sempre responder em JSON e não utilizar estado de sessão.
 
-Logo, vamos estabeler o seguinte: Teremos três APIs. Uma dessas APIs, vai ser responsável por criar e autenticar usuário. As outras duas APIs vão precisar sempre chamar essa API para autenticar nossos endpoints. Não se preocupe, ao longo do desenvolvimento, vou detalhar melhor como cada coisa vai funcionar.
-
-Já as outras duas APIs vão ser serviços que vão efetuar CRUDs. Teremos, nesse projeto, um CRUD para o modelo de publicações/posts e um para o modelo de peixes (Fishes).
-
-De forma simples, a comunicação do nosso sistema seria essa:
-
-```mermaid
-flowchart
-  A[API Express / Auth]
-  B[API Flask / CRUD Peixes]
-  C[API Lumen / CRUD Posts]
-  B & C --> A
-```
-
-Já os modelos do banco de dados será esse:
+Essa nossa API em Lumen vai realizar um CRUD (Create, Read, Update e Delete) de um modelo (representação de uma tabela do banco como um objeto em uma linguagem de programação). O modelo que eu escolhi foi o de Publicações, que vou chamar de Posts. Esses posts terão a seguinte estrutura:
 
 ```mermaid
 erDiagram
-  users {
-      int id
-      varchar(255) name
-      varchar(255) email
-      varchar(245) password
+  posts {
+    id int
+    title varchar(255)
+    content text
+  }
+```
+
+Como é apenas uma tabela isolada, vou usar como banco de dados o `SQLite`, já que podemos todos os nossos dados em um único arquivo pequeno.
+
+Já relativo aos endpoints da nossa API, teremos os seguintes:
+
+|Método|Endpoint|Descrição|
+|-|-|-|
+|GET|http://localhost:8000/post|Lista todas as postagens|
+|POST|http://localhost:8000/post|Salva uma postagem no banco|
+|GET|http://localhost:8000/post/{id}|Mostra uma postagem específica|
+|PUT|http://localhost:8000/post/{id}|Atualiza uma postagem|
+|DELETE|http://localhost:8000/post/{id}|Deleta uma postagem|
+
+Com tudo explicado, vamos programar de fato!
+<br><br>
+
+### Configurando nosso projeto Lumen
+
+Tendo o composer instalado, podemos criar um projeto `Lumen` simplesmente com o seguinte comando:
+
+```
+composer create-project --prefer-dist laravel/lumen <nome da sua aplicação>
+```
+
+Basta escolher um diretório que queria criar o projeto e troca `<nome da sua aplicação>` pelo nome do seu aplicativo. No nosso caso, vou trocar por `simple-lumen-api` (API Lumen simples). Depois de alguns minutos, uma pasta com o nome do projeto será criada contendo todos os arquivos necessários do framework. A estrutura do proejto será essa:
+
+![Estrutura de um projeto Lumen](https://media.discordapp.net/attachments/942819468344713236/1095108520015315114/image.png?width=392&height=585)
+
+Não sei se deu para perceber, mas se você já usou `Laravel`, vai ver como é quase identico ao meu tão amado framework. O motivo? Lumen foi feito baseado em Laravel pelo próprio criador do Laravel. Ele é um framework para desenvolver APIs mais leves e pequenas em Laravel; afinal, *não queremos acertar um tiro numa latinha de refrigerante com uma bazuca, né*?
+
+Bem, com o projeto instalado, precisamos configurar algumas coisas antes de começar a programar.
+
+Primeiro de tudo são as variáveis de ambiente do arquivo `.env` na raiz do projeto.
+
+Como vamos usar `SQLite`, a única coisa que precisamos fazer é comentar quase todas as linhas de configuração do Banco de Dados e apenas dizer que o nosso projeto vai usar `SQLite`. Nosso `.env` ficará assim:
+
+```
+APP_NAME=Lumen
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost
+APP_TIMEZONE=UTC
+
+LOG_CHANNEL=stack
+LOG_SLACK_WEBHOOK_URL=
+
+DB_CONNECTION=sqlite
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=homestead
+# DB_USERNAME=homestead
+# DB_PASSWORD=secret
+
+CACHE_DRIVER=file
+QUEUE_CONNECTION=sync
+```
+
+Dizendo que a conexão do banco será com `SQLite` e comentando as linhas de baixo com `#`, o Lumen irá buscar um arquivo chamado `database.sqlite` dentro de `./database/` para atuar como banco de dados. Então, vamos criar:
+
+![Arquivo database.sqlite dentro do diretório ./database](https://media.discordapp.net/attachments/942819468344713236/1095111343734013974/image.png?width=586&height=247)
+
+Só precisamos criar esse arquivo nesse diretório; vazio mesmo, sem nada dentro.
+
+Agora, vamos editar o seguinte arquivo: `./bootstrap/app.php`.
+
+Dentro desse arquivo, vamos procurar o seguinte trecho de código que está comentado:
+
+```php
+$app = new Laravel\Lumen\Application(
+  dirname(__DIR__)
+);
+
+//$app->withFacades();
+
+//$app->withEloquent();
+```
+
+Vamos apenas descomentá-lo:
+
+```php
+$app = new Laravel\Lumen\Application(
+  dirname(__DIR__)
+);
+
+$app->withFacades();
+
+$app->withEloquent();
+```
+<br>
+
+### **Migrações Lumen**
+
+Depois de configurar o projeto, vamos criar nossas migrações. Para tal, é o mesmo processo que no Laravel; basta digitar o seguinte comando:
+
+```bash
+php artisan make:migration "create posts table"
+```
+
+Um novo arquivo de migração será criado em `./database/migrations/` com um nome muito extenso mas que vai ter a data da criação e `create_posts_table`.
+
+O arquivo deverá ser mais ou menos assim:
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+  /**
+    * Run the migrations.
+    */
+  public function up(): void
+  {
+    Schema::create('posts', function (Blueprint $table) {
+      $table->id();
+      $table->timestamps();
+    });
   }
 
-  fishes {
-      int id
-      varchar(255) specie
-      decimal size
-      int user_id
+  /**
+    * Reverse the migrations.
+    */
+  public function down(): void
+  {
+    Schema::dropIfExists('posts');
   }
+};
+```
+
+Dentro do callback de `Schema::create()`, vamos adicionar as colunas de `title` (que é um `varchar`/`string`) e `content` (do tipo `text`) para a nossa tabela:
+
+```php
+Schema::create('posts', function (Blueprint $table) {
+  $table->id();
+  $table->string('title');
+  $table->text('content');
+  $table->timestamps();
+});
+```
+
+Após isso, podemos simplesmente usar o comando `php artisan migrate` para rodar nossas migrações e criar nossa tabela no banco.
+<br><br>
+
+### **Models Lumen**
+
+Nossos modelos em Lumen seguem literalmente o mesmo padrão que usamos no Laravel (se você já usou Laravel, é claro).
+
+Ou seja: se nossa tabela se chama `posts`, nosso modelo dessa tabela vai ser o singular do nome da tabela com a primeira letra em maiúsculo. Nesse caso, nosso model se chamará `Post`.
+
+Só que, diferente do Laravel onde temos o comando `php artisan make:model <nome do modelo>` para criar nosso modelo, aqui a gente não tem isso. Em geral só há um gato pingado ali ou aqui de comandos `artisan`. Então precismaos criar nosso arquivo `Post.php` na mão.
+
+Muito simples: vá para o diretório `./app/Models/` e aí dentro crie um arquivo chamado `Post.php` com o seguinte conteúdo:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    protected $fillable = [
+        'title',
+        'content'
+    ];
+}
+```
+
+A partir desse arquivo, configurado dessa forma (há muitas outras configurações possíveis, mas essas já bastam para nós), a gente vai poder interagir com a tabela de publicações sem ter que escrever uma linha de `SQL` e abstrair tudo isso para o código.
+<br><br>
+
+### **Roteamento Lumen**
+
+Agora, vamos criar as rotas da nossa API (ou endpoints).
+
+Para isso, vamos no arquivo `./routes/web.php`. Ele vai estar assim:
+
+```php
+<?php
+
+/** @var \Laravel\Lumen\Routing\Router $router */
+
+/*
+|--------------------------------------------------------------------------
+| Application Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register all of the routes for an application.
+| It is a breeze. Simply tell Lumen the URIs it should respond to
+| and give it the Closure to call when that URI is requested.
+|
+*/
+
+$router->get('/', function () use ($router) {
+  return $router->app->version();
+});
+```
+
+Por padrão, o Lumen vem com essa rota `/` que mostra a versão do framework. Falando ligeiramente sobre o que está acontecendo aqui, é o seguinte: o framework possui esse objeto `$router` que é o "roteador" da aplicação; que cria e gerencia as rotas da API. Quando queremos criar um endpoint, precisamos chamar esse objeto e chamar alguma função dele que corresponda a um verbo HTTP (get, post, put, delete etc). Nessa rota que vem por padrão, o método HTTP usado é o GET. Dentro dessa função, o primeiro parâmetro será o `path` do endpoint (caminho da rota) e o segundo vai ser a ação (nesse caso um callback) que vai ser executado ao acessar esse endpoint.
+
+Porém, não vamos usar uma função de callback. Vamos utilizar funções de um `Controller`, uma classe especial para lidar com as funcionalidades das nossas rotas e suas regras de negócios. Vou mostrar como criar um controller na próxima seção, mas por agora, vamos definifir nossas rotas nesse arquivo (pode deletar essa rota padrão se quiser):
+
+```php
+<?php
+
+$router->get('/', function () use ($router) {
+  return $router->app->version();
+});
+
+// Nossas rotas
+
+$router->get('/post', 'PostController@index');
+
+$router->post('/post', 'PostController@store');
+
+$router->get('/post/{id}', 'PostController@show');
+
+$router->put('/post/{id}', 'PostController@update');
+
+$router->delete('/post/{id}', 'PostController@destroy');
+```
+
+Perceba que cada uma dessas rotas corresponde a um dos nossos endpoints que eu determinei naquela tabela anteriormente.
+
+Além disso, veja que aqui, invés de passar um callback como segundo parâmetro, estamos passando uma String. Essa String é dividida em duas partes pelo símbolo do `@` determina qual controller iremos usar e qual função desse controller vai ser usada para essa rota: `<Controller>@<Função>`.
+<br><br>
+
+### **Controllers Lumen**
+
+Tal como o modelo, vamos precisar criar nosso controlador na força de vontade. Para isso, crie um arquivo chamado `PostController.php` dentro de `./app/Http/Controllers/`. Vamos escrever nosso controllador dessa forma inicialmente:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use App\Models\Post;
+
+
+class PostController extends Controller
+{
+  //
+}
+```
+
+Efetivamente, isso não faz nada. Então vamos criar nossas funções.
+
+A primeira será a função `index()`, que vai corresponder ao seguinte endpoint do tipo GET: `http://localhost:8000/post`. Ficou determinado que esse seria o endpoint responsável por devolver a lista de todas as postagens. Então, dentro da classe `PostController`, vamos escrever uma função que faça isso:
+
+```php
+/**
+ * Retorna uma lista em JSON com todas as publicações
+ */
+public function index() : JsonResponse
+{
+  return response()->json(Post::all(), 200);
+}
+```
+
+Show? Beleza. Mas Akemi, me diz o seguinte: o que diabos isso está fazendo?
+
+Calma, meu filho, vem comigo: esse simples código retorna um JSON (Mais especificamente um objeto `JsonResponse`). Sim, um JSON que você já viu aqui. Agora, o conteúdo desse JSON que é interessante: como primeiro parâmetro, estou passando a chamada de uma função. Essa função é chamada a partir da classe `Post`, que, opa, opa, é o nosso modelo que criamos agora há pouco. Mas, o que faz esta função `all()` do modelo? Essa retorna uma lista (uma coleção) contendo todos os dados (linhas) da nossa tabela `posts`. Com isso, a função `response()->json()` tranforma essa coleção em um JSON e retorna para quem estiver chamando esse endpoint da nossa API.
+
+E o que é esse número depois do `Post::all()`? Esse é o `status code` desse endpoint. O código 200 significa OK; serve para requisições GET, informando que algum recurso foi encontrado com sucesso (nesse caso, a lista com as postagens).
+
+Mas, como eu sei que isso está funcionando? Simples, podemos fazer uma chamada para esse endpoint. Mas antes, com o terminal aberto no diretório do projeto, temos que subir o servidor. Podemos usar o próprio servidor embarcado do PHP para isso (uma vez que estamos em ambiente de desenvolvimento). Digite o comando:
+
+```powershell
+php -S localhost:8000 -t public
+```
+
+Agora, podemos testar nossa API. Por ser mais prático, irei usar o Postman para testar:
+
+![Requisição GET para o endpoint que lista nossos posts](https://media.discordapp.net/attachments/942819468344713236/1095124876852985966/image.png?width=1200&height=222)
+
+O resultado:
+
+![Respota dessa requisição](https://media.discordapp.net/attachments/942819468344713236/1096052997160706199/image.png?width=1200&height=272)
+
+Como não criamos nenhum registro na tabela, nossa rota retorna uma lista vazia. Vamos então criar o endpoint para cadastrar uma postagem.
+
+De volta `PostController`, adicione a seguinte função:
+
+```php
+/**
+ * Cria uma publicação e retorna ela em JSON
+ * 
+ * @param Request $request
+ * 
+ * @return JsonResponse
+ */
+public function store(Request $request) : JsonResponse
+{
+  $this->validate($request, [
+      'title' => 'required|string',
+      'content' => 'required|string'
+  ]);
+
+  return response()->json(Post::create($request->all()), 201);
+}
+```
+
+Essa função store é a responsável por salvar uma postagem no banco de dados. Tem como parâmetro um objeto `Request`, que representa a nossa requisição para esse endpoint.
+
+Dentro da função, há a chamada de um método interno `validate()`, que recebe dois parâmetro: a `$request` e um array. Nesse array, podemos definir regras para validar os dados da requisição. Nesse caso, defino que o campo `title` precisa ser uma String e é obrigatório. Digo o mesmo para o campo `content`. Se essas regras não forem obdecidas, a função retornará um erro e não criará a postagem.
+
+Por fim, a função retorna um objeto JSON, tendo como primeiro parâmetro `Post::create($request->all())`. Esse trecho de código é justamente quem salva a postagem no banco de dados. a função `$request->all()` retorna um array com todos os dados do corpo da requisição (entenda como todos os dados que enviamos para requisição; nesse caso, `title` e `content`).
+
+Já a função `Post::create()` cria um post no banco com base nos dados passados por parâmetro e retorna um objeto do modelo específico, que nesse caso é um objeto `Post` representando uma postagem em específico. Logo, esse endpoint devolve um JSON contendo os dados de um Post específico. Além disso, o código escolhido aqui foi o 201, usado quando um recurso é criado com sucesso.
+
+Agora sim nós conseguimos testar nossa API. O endpoint aqui é igual ao anterior, somente o tipo do método que muda de GET para POST.
+
+![Salvando um post no endpoint da nossa API](https://media.discordapp.net/attachments/942819468344713236/1095137107313430538/image.png?width=1200&height=265)
+
+A resposta:
+
+![Resposta da requisição anterior](https://media.discordapp.net/attachments/942819468344713236/1095137254067937361/image.png?width=1200&height=252)
+
+Se a gente ocultar um dos campos do body (corpo) da requisição ou colocar algum deles como algo que não seja String, teremos a seguinte resposta:
+
+![Requisição negada por falha na validação](https://media.discordapp.net/attachments/942819468344713236/1095138244120813598/image.png?width=1200&height=538)
+
+Agora, para provar que não estou mentindo, vamos fazer outra requisição para nossa rota que lista todos os posts:
+
+![Lista com todos os posts](https://media.discordapp.net/attachments/942819468344713236/1095138748301312071/image.png?width=1200&height=585)
+
+**Nota:** Há mais alguns posts, pois eu já havia testado antes. Mas se você olhar o último objeto, verá que ele é justamente a nossa postagem que criamos aqui.
+
+O próximo endpoint que vamos fazer é o da função `show()`. Esse endpoint vai mostrar as informações sobre um post específico. Essa rota é do tipo GET e ela precisa ter um parâmetro na URL. Esse parâmetro é o `id` do post. Se você olhar definição da rota show, lá no `web.php`, verá que em seu path ela tem um `{id}`. Isso indica que ela vai receber um parâmetro pela rota e que esse parâmetro será um id, então, novamente ao `PostController`, teremos que escrever a seguinte função:
+
+```php
+/**
+ * Retorna um objeto JSON de uma publicação específica
+ * 
+ * @param int $id
+ * 
+ * @return JsonResponse
+ */
+public function show(int $id) : JsonResponse
+{
+  return response()->json(Post::findOrFail($id), 200);
+}
+```
+
+Bem simples, parecida com a `index()`. Só que aqui, como ela recebe um parâmetro na rota, precisamos deixá-lo explícito na função também. O resto do código é bem intuitivo: a função retorna um JSON contendo um post específico, que é resgatado do banco através do método `findOrFail()`. Esse método recebe um id como parâmetro e ou devolve um objeto do modelo ou um erro.
+
+Averiguando:
+
+![Endpoint que resgata um post específico](https://media.discordapp.net/attachments/942819468344713236/1095140909319991306/image.png?width=1200&height=570)
+
+Agora, para a função que atualiza um post, vamos precisar tanto do id pelo parâmetro da URL, quanto do objeto `Request` para pegar os dados do body da requisição. Essa função normalmente se chama `update()`. Adicione o nosso controlador:
+
+```php
+/**
+ * Atualiza uma publicação específica e retorna ela
+ * 
+ * @param Request $request
+ * @param int $id
+ * 
+ * @return JsonResponse
+ */
+public function update(Request $request, int $id) : JsonResponse
+{
+  $post = Post::findOrFail($id);
+
+  $post->update($request->all());
+
+  return response()->json($post, 200);
+}
+```
+
+Similiar aos outros exemplos, aqui a gente recupera o modelo da postagem com `findOrFail()` e guardamos em `$post`. Depois, usamos o método `update()` do modelo para atualizar todos os campos que foram passados no body da request; obtemos esses dados através do `$request->all()`. Por fim, retornamos o modelo atualizado em um JSON. O status code normalmente é 204 ou 200 mesmo.
+
+![Endpoint de update de um post](https://media.discordapp.net/attachments/942819468344713236/1095142372955934780/image.png?width=1200&height=547)
+
+Finalmente terminando, há o endpoint do tipo DELETE. Essa rota é a responsável por deletar algum recurso (nesse caso, um post). Ela pode ser definida assim:
+
+```php
+/**
+ * Deleta uma publicação específica
+ * 
+ * @param int $id
+ * 
+ * @return JsonResponse
+ */
+public function destroy(int $id) : JsonResponse
+{
+  $post = Post::findOrFail($id);
+
+  $post->delete();
+
+  return response()->json([
+      'message' => 'Deleted successfully',
+      'status' => true
+  ], 200);
+}
+```
+
+Muito parecido com o `update()`, temos um id como parâmetro da URL. A partir dele, resgatamos a postagem do banco e colocamos em `$post`. Usamos então o método `delete()` desse objeto, que deleta um registro do banco. No final, retornamos um JSON com uma mensagem de deletado com sucesso e com um status `true`. O código pode ser 204 e 200 como no update.
+
+![Endpoint que deleta uma postagem](https://media.discordapp.net/attachments/942819468344713236/1095143724805263400/image.png?width=1200&height=521)
+
+Com isso, fizemos uma API mais ou menos REST que realiza um CRUD simples de uma tabela. A próxima seção será desenvolvendo uma outra API em FastAPI, com outro exemplo mas com a mesma proposta. Se quiser ver o desenvolvimento dela, fique à vontade.
+<br><br>
+
+## API simples com Python
+
+Para o desenvolvimento da nossa API com Python, irei utilziar o framework `FastAPI`. Ele é rápido e direto de usar, mas sendo bem poderoso também.
+
+Com essa API, iremos desenvolver um outro CRUD, mas muito parecido ao que foi feito na Api em Lumen. Um é independente do outro, no entanto. Será esse um CRUD de peixes. Sim, peixes; não questione, apenas aceite.
+
+Tão logo, teremos a seguinte tabela para o model de peixes:
+
+```mermaid
+erDiagram
+  fishes {
+    id int
+    specie varchar(255)
+    size decimal
+  }
+```
 
   posts {
       int id
