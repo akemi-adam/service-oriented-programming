@@ -59,13 +59,14 @@ Por fim, se tiver alguma sugestão, ou ver que algo está errado e quiser me avi
     - [Configurando nosso projeto FastAPI](#configurando-nosso-projeto-fastapi)
     - [Models FastAPI](#models-fastapi)
     - [Roteamento FastAPI](#roteamento-fastapi)
-  - [Projetando nossos serviços](#projetando-nossos-serviços)
-  - [API para autenticação com Express](#api-para-autenticação-com-express)
-- [Consumindo nossos Serviços](#consumindo-nossos-serviços)
-    - [Consumindo Serviço no lado do Cliente](#consumindo-serviço-no-lado-do-cliente)
-      - [DOM](#dom)
-      - [Requisições Ajax](#ajax)
-    - [Consumindo Serviço no lado do Servidor](#consumindo-serviço-no-lado-do-servidor)
+- [Consumindo Serviço no lado do Cliente](#consumindo-serviço-no-lado-do-cliente)   
+  - [DOM](#dom)
+  - [AJAX](#ajax)
+  - [CORS](#cors)
+    - [Configurando CORS Lumen](#configurando-cors-lumen)
+    - [Configurando CORS FastAPI](#configurando-cors-fastapi)
+  - [Listando modelos do banco](#listando-modelos-do-banco)
+  - [Salvando um modelo no banco](#salvando-um-modelo-no-banco)
 - [Finalização](#finalização)
 - [Referências](#referências)
 
@@ -1867,6 +1868,501 @@ Para dizer que não estou mentindo, vamos fazer uma requisição para o endpoint
 ![Provando que não estou mentindo](https://media.discordapp.net/attachments/942819468344713236/1096579114888073259/image.png?width=1200&height=512)
 
 Com isso, criamos uma API bem simples que realiza um CRUD de um modelo básico. A seguir, vou mostrar como consumir uma API com JavaScript vanilla (puro, sem nenhuma SPA) para podermos utilizar essa API através de uma interface gráfica com a qual o cliente consiga interagir.
+<br><br>
+
+# Consumindo Serviço no lado do Cliente
+
+Nossos serviços, bem simples e sem muita segurança, estão funcionando. Anteriormente, eu mostrei como consumir um serviço simples (IBGE) em diferentes linguagens. Com qualquer um dos nossos dois serviços desenvolvidos acima, podemos aplicar a mesma lógica para consumir nossos serviços. Porém, isso é do lado do servidor. Como, então, podemos integrar nossos serviços com uma interface mais amigável para que os nossos usuários possam interagir com esses serviços?
+
+Eu te respondo: por meio de AJAX.
+
+Geralmente, quando não se processa as requisições de uma API no lado do servidor, se usa uma SPA (Single Page Application) para criar páginas dinâmicas e com requisições assíncronas. E essas requisições assíncronas funcionam justamente por meio de AJAX. E, para que possamos deixar nossa página dinâmica para interação, sem precisar utilizar alguma SPA como React ou Vue, vamos mexer com o DOM. Mas antes de programar, vamos estruturar brevemente esses termos.
+<br><br>
+
+## DOM
+
+_Document Object Model_ (DOM) é um objeto global do JavaScript que representa o documento da página. É a partir desse objeto, desse documento, que podemos manipular praticamente tudo que está contido na página, todo o seu conteúdo.
+
+![Esquema de árvore do DOM](https://lh5.googleusercontent.com/SQ3qz32VvBhTPFTeGtWOzPVhcv-mfB7C8mj6k4C1IVOttNGWf71T9s8Pq9QY4F_AlMbEKMwgnMGh5XEQf2v8-UU-G6xZc984pnSwfJvKF-CxSEOsBafgKCkkg6tCWgH6Ni9bb_N8)
+
+Como mostrado na imagem acima, o objeto `document` possui acesso a todos os elementos que estão contidos dentro da nossa página. Praticamente, ele pode manipular todas as tags HTML da página; como por mudar o conteúdo de um `<h1>Título top</h1>` para `<h1>Título supimpa</h1>`.
+<br><br>
+
+## AJAX
+
+_Asynchronous Javascript and XML_ (AJAX) como o nome já diz, é uma maneira que temos de processar dados e interagir com outras aplicações de forma assíncrona a partir de um objeto da classe `XMLHttpRequest`. Essa classe vai nos possibilitar pegar os dados do usuário vindos de uma interface gráfica, enviar para um de nossos serviços e processar esses dados de alguma forma.
+
+Iremos usar essas ferramentas para nossa interface.
+<br><br>
+
+## CORS
+
+Mas antes, precisamos configurar uma coisa muito importante nas nossas APIs: o CORS.
+
+_Cross Origin Resource Sharing_ (CORS) diz respeito a basicamente um mecanismo que delimita (permite) de quais outras origens nossa aplicação web vai poder solicitar recursos. Ou seja: se quisermos que o nosso front-end possa se comunicar com uma de nossas APIs, precisamos configurar em nossas APIs explicitamente que outras fontes podem acessar seus recursos.
+<br><br>
+
+### *Configurando CORS Lumen*
+
+Já adianto que essa solução não é minha, porém funciona.
+
+No diretório `app/Http/Middleware/` vamos criar um novo arquivo, chamado: `CorsMiddleware.php`. O conteúdo do arquivo será o seguinte:
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+class CorsMiddleware
+{
+  public function handle($request, \Closure $next)
+  {
+    if ($request->isMethod('OPTIONS'))
+      $response = response('', 200);
+    else
+      $response = $next($request);
+
+    $response->header('Access-Control-Allow-Methods', 'HEAD, GET, POST, PUT, PATCH, DELETE');
+    
+    $response->header('Access-Control-Allow-Headers', $request->header('Access-Control-Request-Headers'));
+    
+    $response->header('Access-Control-Allow-Origin', '*');
+    
+    return $response;
+  }
+}
+```
+
+Aqui, o que importa é entender o seguinte: isso é um middleware (middleware seria uma espécie de interceptor requisições. No trajeto em que a requisição é enviada pelo cliente até o ponto em que ela chega no servidor, podemos ter um middleware que analisa essa requisição e executa alguma ação) que primeiro analisa o tipo do método da requisição e deopis define alguns cabeçalhos para essa requisição. Esses cabeçalhos armazenam informações da nossa requisição. Nesse caso, estamos informando que nossa API vai aceitar praticamente qualquer tipo de requisição e, principalmente, em `$response->header('Access-Control-Allow-Origin', '*');` estamos informando que nossa aplicação pode receber requisições de qualquer outra aplicação web; incluindo nosso front-end.
+
+Com o middleware criado, precisamos dizer que a nossa aplicação vai utilizar ele. Para isso, vamos acessar o arquivo `./bootstrap/app.php` e, depois de um comentário com o título `Register Middleware`, vamos registrar o nosso middleware:
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Register Middleware
+|--------------------------------------------------------------------------
+|
+| Next, we will register the middleware with the application. These can
+| be global middleware that run before and after each request into a
+| route or middleware that'll be assigned to some specific routes.
+|
+*/
+
+$app->middleware([
+  App\Http\Middleware\CorsMiddleware::class
+]);
+```
+
+E pronto. Com isso, nossa API Lumen já está configurada para aceitar nossas requisições.
+<br><br>
+
+### *Configurando CORS FastAPI*
+
+Bem mais simples do que no exemplo de Lumen, para nossa API FastAPI. Primeiro, precisamos importar:
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+```
+
+Depois, nós vamos apenas fazer a seguinte configuração no início do nosso arquivo `main.py`, logo após criar o objeto app:
+
+```python
+# Configurando CORS
+
+origins = ['*']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+E pronto, estamos, de forma bem superficial aqui, dizendo que nossa API permite receber requisições de qualquer tipo e de qualquer fontes (outros serviços ou clientes, como nosso front-end).
+<br><br>
+
+## Listando modelos do banco
+
+Primeiro de tudo: para listar nossos modelos, vamos precisar de uma página. Essa página (e todo nosso projeto de front-end), vai estar nesse repositório, dentro da <a href="./examples/frontend">pasta front-end</a>. Vou só atentar aqui ao fato de que eu vou estar usando `Bootstrap 5`. Se você não sabe Bootstrap, tudo bem, porque eu tenho um <a href="https://github.com/akemi-adam/bootstrap-docs"> tutorial de Bootstrap</a>, basta clicar nesse link aí.
+
+Enfim, nossa página terá o seguinte escopo:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todas as postagens e peixes</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous" defer></script>
+  <!-- Nosso Script -->
+  <script src="./js/index.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-5 mb-4 text-center">Postagens (API Lumen) e Peixes (API FastAPI)</h1>
+    <p class="lead">Lista com todas as postagens feitas a partir do nosso serviço Lumen e outra com todos os peixes cadastrados no nosso serviço FastApi</p>
+    <h2 class="mb-2">Postagens</h2>
+    <div id="post-div">
+      <!-- Conteúdo -->
+    </div>
+    <h2 class="mb-2 mt-4">Peixes</h2>
+    <div id="fish-div">
+      <!-- Conteúdo -->
+    </div>
+  </div>
+</body>
+</html>
+```
+
+E o seguinte visual:
+
+![Nossa página inicial](https://media.discordapp.net/attachments/942819468344713236/1097665740666044528/image.png?width=1200&height=416)
+
+Se você só fez apenas uma das duas APIs, tudo bem, basta seguir apenas as instruções da sua API. Se fez as duas, ótimo, só segurar na minha mão e vim comigo. Mas, independentemente do que tenha seguido, os conceitos são praticamente os mesmos para ambas ou qualquer outro serviço.
+
+Agora, note que há uma tag `<script>` que está apontando para um arquivo `index.js` que contém o nosso script que vai executar todo o código que faz as requisições e processa seus dados (ele está dentro de `./examples/frontend/js/index.js`). Sem mais delongas, vamos escrever as primeiras linhas de código desse nosso script:
+
+```javascript
+window.addEventListener('DOMContentLoaded', () =>
+{
+  // Lógica a ser executada
+})
+```
+
+Se você já usou JavaScript, não deve ser supresa para você. Mas para quem nunca usou, deixa eu explicar:
+
+No JavaScript, temos um objeto chamado `window`. Diferente do objeto `document` que representa todo o documento da página, o objeto `window` se refere a toda a janela. Ele está acima do `document` na hierarquia; ou seja: o `document` é um atributo do `window`. A imagem a seguir mostra bem como essa hierarquia do funcionamento da janela do navegador funciona:
+
+![Hierarquia de um navegador](https://www.optimizesmart.com/wp-content/uploads/2014/05/accessing-HTML-DOM.jpg)
+
+Agora, sabendo que o objeto `window` representa a janela do navegador, podemos prosseguir. Em suma, esses objetos que representam algum elemento ou componente do navegador, em JavaScript, podem _escutar_ um evento.
+
+O conceito de Event-Listener (Evento e ouvinte) é aplicado em inúmeros contextos e em diversas linguagens. O Java por exemplo usa de Event-Listener na criação de interfaces nativas com Swing (ou mesmo com JavaFX). Mas, o que é isso? Event-Listener é uma forma de programar onde teremos um evento. Esse evento pode ser o clique de um mouse, o clique de uma tela, o carregamento de uma página etc. Quando, por exemplo, ocorre um evento de clique, podemos ter um _ouvinte_ (listener). Esse ouvinte "escuta" um tipo de evento específico e executa uma determinada lógica que quisermos, por meio de uma função de `callback`.
+
+Logo, o trecho:
+
+```javascript
+window.addEventListener('DOMContentLoaded', () =>
+{
+  // Lógica a ser executada
+})
+```
+
+O método `addEventListener()` permite que nós possamos adicionar um ouvinte a um objeto, nesse caso, o objeto window. O primeiro parâmetro é o nome do evento que esse ouvinte irá escutar. `DOMContentLoaded` é meio intuitivo, mas esse é um evento que é lançado sempre que o documento da página termina de ser carregado (os elementos e tags HTML da página, de forma mais simples de entender). Como a gente vai usar o DOM para exibir os resultados de nossas requisições, precisamos garantir que só vamos executar o nosso código quando o objeto `document` estiver completamente carregado. Agora, o segundo parâmetro é justamente a função de `callback`; a lógica que queremos que seja executada. Nossa função de callback nesse caso é uma arrow function.
+
+Dentro dessa arrow function, vamos chamar as seguintes funções:
+
+```javascript
+window.addEventListener('DOMContentLoaded', () =>
+{
+  // Lista os posts da API Lumen
+  listPosts(new XMLHttpRequest());
+
+  // Lista os peixes da API FastAPI
+  listFishes(new XMLHttpRequest());
+})
+```
+
+Essas funções ainda não existem, preciamos criá-las ainda (lembrando que recomendo que você crie a função que seja referente a API que você escolher desenvolver aqui comigo). Mas, o que é interessante aqui é notar o `new XMLHttpRequest()`.
+
+Como eu tinha citado lá na parte que falo sobre AJAX, a maneira com a qual iremos conseguir fazer essas requisições assíncronas para o nosso servidor é especificamente a partir dessa classe XMLHttpRequest. Se você viu a parte sobre <a href="#consumindo-um-serviço-simples">consumir um serviço simples</a>, vai lembrar que, independentemente da linguagem, nós sempre usávamos algum artifício ou algum objeto para agir como `client` (o lado da comunicação que vai fazer a solicitação para um serviço). Com PHP usamos Guzzle, com Node o Axios e com Python a própria biblioteca nativa. E agora, usando JavaScript puro, vanilla, nós vamos usar o XMLHttpRequest justamente como esse cliente responsável por fazer as requisições. Por isso no código acima eu passo uma instância de XMLHttpRequest como parâmetro; para agir como cliente.
+
+Agora, vamos de fato criar essas funções:
+
+```javascript
+const listPosts = (client) =>
+{
+  client.onreadystatechange = () =>
+  {
+    if (client.readyState === 4)
+      if (client.status === 200)
+      {
+        const posts = JSON.parse(client.responseText)
+
+        const postDiv = document.getElementById('post-div')
+
+        posts.map(post => {
+          
+          const div = document.createElement('div')
+
+          div.innerHTML = `${post.title} - ${post.content}<br/>`
+
+          postDiv.appendChild(div)
+          
+          postDiv.appendChild(document.createElement('hr'))
+        })
+      }
+  }
+}
+```
+
+De forma simples, nós estamos armazenando uma arrow function numa constante chamada `listPosts`, que é justamente a função que chamamos dentro do Listener do nosso evento. Essa arrow function recebe um `client` como parâmetro que é aquela instância de XMLHttpRequest que passamos como parâmetro de `listPosts()`.
+
+Dentro da função de fato, a gente pega o objeto client e define um valor para sua propriedade `onreadystatechange`. Essa propriedade recebe uma função que vai ser executada quando o estado da requisição mudar (no nosso caso, vai ser executada quando recebemos a resposta da nossa requisição). O valor desse atributo também é uma arrow function.
+
+Nessa arrow function, criamos uma constante chamada `posts` que tem uma valor bem interessante. Ela recebe `JSON.parse(client.responseText)`. Primeiramente, esse `responseText` é um atributo do client que contém o body da requisição, que tem a lista de todas as postagens. Só que esse atributo vem como uma String, não um JSON; precisamos fazer `parse` dessa String; e isso acontece a partir de `JSON.parse()`. Agora, `posts` armazena uma lista com nossas postagens.
+
+Depois disso, vamos enfim utilizar o tão falado DOM. Chamando o objeto global `document`, podemos recuperar um elemento HTML da página e tratar ele como se fosse um objeto. Aqui vou usar a maneira mais simples e direta que é a partir do método `getElementById()`, passamos o atributo `id` do elemento definido lá no HTML e com isso conseguimos recuperar a nossa div. Nesse caso, o id é `post-div`.
+
+Após tal, vamos usar a função `map()` do JavaScript para percorrer nossa lista `posts`. `map()` recebe uma arrow function como parâmetro e como essa lista armazena objetos JSON, podemos representar cada um desses objetos durante o loop de iterações como um único objeto chamado `post`.
+
+Agora, usamos o `document` novamente para criar uma nova div. Todo elemento HTML possui um atributo chamado `innerHTML`, que armazena o conteúdo dessa tag. Nesse caso, o conteúdo dessa nossa nova div será '`${post.title} - ${post.content}<br/>`', uma String formatada que mostra o títutlo e o conteúdo da postagem.
+
+No final, por meio do método `appendChild()`, nós adicionamos a nossa nova div dentro da div mãe que contém a lista de postagens e também adicionamos um `<hr>` depois de adicionar a div.
+
+Beleza, já fizemos toda a lógica para exibir os dados na tela. Só que, se você percebeu, ainda não fizemos a requisição para o endpoint. Para realizar isso, vamos criar a seguinte função:
+
+```javascript
+const sendRequest = (client, endpoint) =>
+{
+  client.open('GET', endpoint)
+
+  client.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  client.setRequestHeader('Content-Type', 'application/json');
+  client.setRequestHeader('Access-Control-Allow-Origin', '*');
+
+  client.send(null)
+}
+```
+
+Explicando rapidamente o que está acontecendo aqui, temos o seguinte: `sendRequest` recebe uma arrow function que possui dois parâmetros, nosso objeto `client` e nosso endpoint. A função `open()` inicia uma nova requisição, tendo como primeiro parâmetro o verbo HTTP e como segundo o próprio endpoint dessa requisição.
+
+Após isso, nós definimos alguns cabeçalhos dessa requisição a partir do `setRequestHeader()`, como o conteúdo da requisição e, principalmente, em `Access-Control-Allow-Origin` para configurar aquela questão do CORS, só que no lado do front.
+
+Por fim, a requisição é enviada a partir do método `send()`. O parâmetro de send é o body da nossa request. Nesse caso, como estamos fazendo uma requisição do tipo GET que não possui nenhum parâmetro, podemos apenas passar `null`.
+
+Agora, vamos chamar essa função dentro da nossa outra função `listPosts()` para o endpoint `http://localhost:8000/post`:
+
+```javascript
+const listPosts = (client) =>
+{
+  client.onreadystatechange = () =>
+  {
+    if (client.readyState === 4)
+      if (client.status === 200)
+      {
+        const posts = JSON.parse(client.responseText)
+
+        const postDiv = document.getElementById('post-div')
+
+        posts.map(post => {
+          
+          const div = document.createElement('div')
+
+          div.innerHTML = `${post.title} - ${post.content}<br/>`
+
+          postDiv.appendChild(div)
+          
+          postDiv.appendChild(document.createElement('hr'))
+        })
+      }
+  }
+
+  sendRequest(client, 'http://localhost:8000/post')
+}
+```
+
+E pronto. Toda vez que a página for carregada, `listPosts` vai ser chamada e a requisição vai ser enviada. Quando ela for enviada, a nossa arrow function dentro de `onreadystatechange` vai ser executada com a resposta da request.
+
+A lógica é a mesma para a API feita em FastAPI, mudando apenas a mensagem e o endpoint para `http://localhost:5000/fish`:
+
+```javascript
+const listFishes = (client) =>
+{
+  client.onreadystatechange = () =>
+  {
+    if (client.readyState === 4)
+      if (client.status === 200)
+      {
+        const fishes = JSON.parse(client.responseText)
+
+        const fishDiv = document.getElementById('fish-div')
+
+        fishes.map(fish => {
+          
+          const div = document.createElement('div')
+
+          div.innerHTML = `${fish.specie} - Tamanho: ${fish.size}<br/>`
+
+          fishDiv.appendChild(div)
+          
+          fishDiv.appendChild(document.createElement('hr'))
+        })
+      }
+  }
+  
+  sendRequest(client, 'http://localhost:5000/fish')
+}
+```
+
+Agora, se você não deletou os dados dos testes que fizemos enquanto construíamos nossas APIs, já deve estar aparecendo alguma postagem ou informações sobre peixes na tela, como podemos ver aqui:
+
+![Página index com a lógica feita](https://media.discordapp.net/attachments/942819468344713236/1097861669390143569/image.png?width=1200&height=446)
+<br><br>
+
+## Salvando um modelo no banco
+
+Bichão, agora vamos construir a nossa página para salvar postagens ou peixes. Anteriormente, eu mostrei como fazer uma requisição do tipo GET com `XMLHttpRequest`. Só que, existe uma outra maneira que ao meu ver é mais rápida e abstrai um pouco esse processo: é através de um recurso disponibilizado pelo JavaScript chamado `fetch`.
+
+Se você viu a seção que ensino sobre como consumir um serviço com Node.js, vai perceber que o `fetch` é muito similiar ao `axios` na sua forma de fazer requisições. Vejamos um escopo básico do `fetch`:
+
+```javascript
+fetch(endpoint, options)
+```
+
+O primeiro parâmetro vai ser o endpoint da aplicação que queremos acessar, enquanto o segundo será as opções de configurações que essa requisição terá (através de um objeto), como por exemplo o método da requisição ou o `body` dela. Depois de configurar todos os argumentos da função, ela vai retornar uma `Promisse`, que pode ser tratada com `thenc` (then, catch); ou com `async/await`, como iremos utilizar.
+
+Mas antes, vamos criar nossa página <a href="./examples/frontend/create.html">create</a> que irá conter o nosso formulário:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salvar peixe ou post</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous" defer></script>
+  <!-- Nosso Script -->
+  <script src="./js/create.js"></script>
+</head>
+<body>
+  <div class="container bg-light mt-5 px-5 py-5 rounded">
+    <h1 class="mb-4 text-center">Criar postagem e Peixes </h1>
+    <h2 class="mb-4">Postagens</h2>
+    <form method="post">
+      <label for="title" class="form-label">Título</label>
+      <input type="text" name="title" class="form-control post" id="title" placeholder="Digite o título da postagem">
+      <label for="content" class="form-label mt-3">Conteúdo</label>
+      <textarea name="content" id="content" class="form-control post" placeholder="No que você está pensando? Conte aqui!"></textarea>
+      <button type="button" class="btn btn-success d-block mx-auto mt-4 py-2 px-5" id="post-button">Enviar</button>
+    </form>
+    <h2 class="mb-2 mt-4">Peixes</h2>
+    <form method="post">
+      <label for="specie" class="form-label">Espécie</label>
+      <input type="text" name="specie" class="form-control fish" id="specie" placeholder="Digite a espécie do peixe">
+      <label for="size" class="form-label mt-3">Tamanho</label>
+      <input type="number" name="size" id="size" class="form-control fish" placeholder="Digite o tamanho">
+      <button type="button" class="btn btn-success d-block mx-auto mt-4 py-2 px-5" id="fish-button">Enviar</button>
+    </form>
+  </div>
+</body>
+</html>
+```
+
+Vamos criar um <a href="./examples/frontend/js/create.js">script</a> para essa página com um código a ser executado toda vez que o conteúdo da página for carregado:
+
+```javascript
+window.addEventListener('DOMContentLoaded', () =>
+{
+  
+})
+```
+
+Agora nós iremos criar a seguinte função e já chamar ela dentro do nosso evento:
+
+```javascript
+// Nossa função
+const saveModel = (endpoint, className) =>
+{
+  // Pega os elementos HTML de uma classe específica e cópia para um array
+  const elements = [...document.getElementsByClassName(className)];
+
+  let body = {};
+
+  // Percorre todos os elementos para fazer uma associação chave-valor com o objeto body
+  elements.map(element => body[element.name] = element.value)
+
+  // Essa função ainda não existe
+  sendRequest(endpoint, 'POST', body)
+}
+
+
+window.addEventListener('DOMContentLoaded', () =>
+{
+  // Vincula saveModel() aos formulários de post e peixe respectivamente quando o botão de enviar for pressionado
+
+  document.getElementById('post-button').addEventListener('click', () => saveModel('http://localhost:8000/post', 'post'))
+
+  document.getElementById('fish-button').addEventListener('click', () => saveModel('http://localhost:5000/fish', 'fish'))
+})
+```
+
+Sei que foi coisa demais de uma vez, então deixa eu explicar o que está acontendo aqui:
+
+A função `saveModel()` recebe um endpoint e o nome de uma classe HTML como argumento. Lá no HTML, se você olhar com calma, nos inputs do formulário que cria uma postagem, foi adicionado uma classe `post`, para que possamos recuperar o valor desses inputs justamente através da sua classe. OBS.: o mesmo foi feito para o formulário de peixes, usando a classe `fish`. Para recuperar os inputs dos forumlários, usamos a função: `document.getElementsByClassName(className)`. Só que essa função vai retornar uma coleção de objetos HTML, e, para ser mais fácil de manipular, é interessante tratar isso como um array. Para isso, usamos o operador spread (`...`) dentro de um array vazio. Como é demonstrado nessa linha:
+
+```javascript
+const elements = [...document.getElementsByClassName(className)];
+```
+
+Dessa forma, podemos acessar os inputs do formulários como objetos dentro de um array. Se isso é um array, então podemos usar o método `map()` para percorrer cada elemento desse array. Por que queremos isso? Porque podemos criar um novo objeto javascript com associação `chave-valor` que vai ser justamente o body da nossa requisição HTTP; praticamente o nosso JSON a ser enviado com a requisição. Logo, vamos fazer o seguinte:
+
+```javascript
+let body = {};
+
+elements.map(element => body[element.name] = element.value)
+```
+
+Criamos um objeto vazio chamado `body` e usamos a função `map()` no nosso array de elementos. Para cada elemento, vamos criar uma nova propriedade (chave) no objeto body. Essa propriedade vai ser o nome do input. E aí, vamos associar essa propriedade com um valor, que vai ser o valor do input. Interessante, né? Mas ainda não acabou; vamos chamar mais uma função:
+
+```javascript
+sendRequest(endpoint, 'POST', body)
+```
+
+Só que o detalhe aqui, é que essa função não existe ainda. Então, precisamos criá-la:
+
+```javascript
+const sendRequest = async (endpoint, method, body) =>
+{
+  try {
+      
+    const response = await fetch(endpoint, {
+      method: method,
+      headers: {
+        accept: 'application.json',
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify(body)
+    })
+
+    if (response.ok)
+      window.location.href = './index.html';
+
+  } catch (error) {
+    console.log(`Ocorreu um erro: ${error}`)
+  }
+}
+```
+
+Essa é justamente a função que vai enviar a requisição HTTP do tipo POST para os nossos endpoints para persistir nossos dados no banco. Só que aqui, estamos usando outra abordagem, que é por meio do `fetch()`. A função `fetch()` realiza uma requisição para um endpoint informado e retorna uma Promisse. Podemos tratar essa Promisse com `thenc` para quando ela for resolvida, só que nesse caso, eu não quero propriamente um comportamento assíncrono do resto do meu código (enquanto a Promisse é resolvida, o código restante continua a ser chamado). Quero que o código que vem a seguir da chamada de minha função só seja executado quando a minha Promisse for resolvida. Para isso, usamos um artifício do Javascript chamado `async/await`. Declarando nossa função como `async`, como é mostrado no exemplo, estamos definindo que essa função se comporta de forma assíncrona. Com isso, nós podemos usar a palavra reservada `await` antes da chamada de uma outra função assíncrona, para dizer que o código irá esperar (await = espere) a Promisse dessa outra função ser resolvida para continuar o código. No nosso caso, é como dizer que estamos esperando que a requisição (feita pela função `fetch()`) termine para poder continuar nossa código.
+
+Com essa simples explicação sobre `async/await`, podemos destrinchar de fato esse código.
+
+Recebendo `endpoint`, `method` e `body` como parâmetros, mas criar uma constante dentro de um `try-catch` chamada `response`, que irá conter a resposta da requisição. Response vai ser igual à resolução da Promisse da função `fetch()`, que vai ser esperada ser concluída através da palavra `await`. Na função `fetch()`, o primeiro parâmetro será o endpoint; já o segundo é um objeto de configurações da requisição. O `method` será justamente o método passado por parâmetro através da variável `method`. Depois, vamos configurar alguns headers da requisição, dos quais já falei um pouco aqui, e por fim, vamos definir a seguinte propriedade:
+
+```javascript
+body: JSON.stringify(body)
+```
+
+Aqui, estamos definindo o `body` da requisição, que vão ser justamente os dadods que queremos persistir no banco. Só que não podemos mandar eles simplesmente como um objeto nativo JavaScript; caso façamos isso, teremos um erro `422` retornado, que é um erro dado ao não conseguir processar o conteúdo de uma requisição. Isso porque, para trafegar entre as nossas aplicações, o nosso JSON, que aqui está como um objeto JavaScript puro, precisa ser codificado em uma String, para que assim possa ser feito justamente o `parse` dessa String já no servidor que receber a requisição; dessa forma, o próprio servidor vai entender que essa String é um JSON e vai converté-la em um objeto ou algum tipo de dado que a linguagem dele entenda para poder tratar esse dado. E é isso o que essa função `JSON.stringify()` faz; converte um objeto JavaScript em uma String que representa um JSON.
+
+Após a Promisse ser concluída, checamos se a requisição foi feita com sucesso para que possamos redirecionar o usuário para a página de listagem:
+
+```javascript
+if (response.ok)
+  window.location.href = './index.html';
+```
 <br><br>
 
 # Referências
