@@ -2299,7 +2299,11 @@ window.addEventListener('DOMContentLoaded', () =>
 
 Sei que foi coisa demais de uma vez, então deixa eu explicar o que está acontendo aqui:
 
-A função `saveModel()` recebe um endpoint e o nome de uma classe HTML como argumento. Lá no HTML, se você olhar com calma, nos inputs do formulário que cria uma postagem, foi adicionado uma classe `post`, para que possamos recuperar o valor desses inputs justamente através da sua classe. OBS.: o mesmo foi feito para o formulário de peixes, usando a classe `fish`. Para recuperar os inputs dos forumlários, usamos a função: `document.getElementsByClassName(className)`. Só que essa função vai retornar uma coleção de objetos HTML, e, para ser mais fácil de manipular, é interessante tratar isso como um array. Para isso, usamos o operador spread (`...`) dentro de um array vazio. Como é demonstrado nessa linha:
+A função `saveModel()` recebe um endpoint e o nome de uma classe HTML como argumento. Lá no HTML, se você olhar com calma, nos inputs do formulário que cria uma postagem, foi adicionado uma classe `post`, para que possamos recuperar o valor desses inputs justamente através da sua classe.
+
+OBS.: o mesmo foi feito para o formulário de peixes, usando a classe `fish`.
+
+Para recuperar os inputs dos forumlários, usamos a função: `document.getElementsByClassName(className)`. Só que essa função vai retornar uma coleção de objetos HTML, e, para ser mais fácil de manipular, é interessante tratar isso como um array. Para isso, usamos o operador spread (`...`) dentro de um array vazio. Como é demonstrado nessa linha:
 
 ```javascript
 const elements = [...document.getElementsByClassName(className)];
@@ -2345,11 +2349,19 @@ const sendRequest = async (endpoint, method, body) =>
 }
 ```
 
-Essa é justamente a função que vai enviar a requisição HTTP do tipo POST para os nossos endpoints para persistir nossos dados no banco. Só que aqui, estamos usando outra abordagem, que é por meio do `fetch()`. A função `fetch()` realiza uma requisição para um endpoint informado e retorna uma Promisse. Podemos tratar essa Promisse com `thenc` para quando ela for resolvida, só que nesse caso, eu não quero propriamente um comportamento assíncrono do resto do meu código (enquanto a Promisse é resolvida, o código restante continua a ser chamado). Quero que o código que vem a seguir da chamada de minha função só seja executado quando a minha Promisse for resolvida. Para isso, usamos um artifício do Javascript chamado `async/await`. Declarando nossa função como `async`, como é mostrado no exemplo, estamos definindo que essa função se comporta de forma assíncrona. Com isso, nós podemos usar a palavra reservada `await` antes da chamada de uma outra função assíncrona, para dizer que o código irá esperar (await = espere) a Promisse dessa outra função ser resolvida para continuar o código. No nosso caso, é como dizer que estamos esperando que a requisição (feita pela função `fetch()`) termine para poder continuar nossa código.
+Essa é justamente a função que vai enviar a requisição HTTP do tipo POST para os nossos endpoints para persistir nossos dados no banco. Só que aqui, estamos usando outra abordagem, que é por meio do `fetch()`.
+
+A função `fetch()` realiza uma requisição para um endpoint informado e retorna uma Promisse. Podemos tratar essa Promisse com `thenc` para quando ela for resolvida, só que nesse caso, eu não quero propriamente um comportamento assíncrono do resto do meu código (enquanto a Promisse é resolvida, o código restante continua a ser chamado). Quero que o código que vem a seguir da chamada de minha função só seja executado quando a minha Promisse for resolvida. Para isso, usamos um artifício do Javascript chamado `async/await`.
+
+Declarando nossa função como `async`, como é mostrado no exemplo, estamos definindo que essa função se comporta de forma assíncrona. Com isso, nós podemos usar a palavra reservada `await` antes da chamada de uma outra função assíncrona, para dizer que o código irá esperar (await = espere) a Promisse dessa outra função ser resolvida para continuar o código. No nosso caso, é como dizer que estamos esperando que a requisição (feita pela função `fetch()`) termine para poder continuar nossa código.
 
 Com essa simples explicação sobre `async/await`, podemos destrinchar de fato esse código.
 
-Recebendo `endpoint`, `method` e `body` como parâmetros, mas criar uma constante dentro de um `try-catch` chamada `response`, que irá conter a resposta da requisição. Response vai ser igual à resolução da Promisse da função `fetch()`, que vai ser esperada ser concluída através da palavra `await`. Na função `fetch()`, o primeiro parâmetro será o endpoint; já o segundo é um objeto de configurações da requisição. O `method` será justamente o método passado por parâmetro através da variável `method`. Depois, vamos configurar alguns headers da requisição, dos quais já falei um pouco aqui, e por fim, vamos definir a seguinte propriedade:
+Recebendo `endpoint`, `method` e `body` como parâmetros, a gente pode criar uma constante dentro de um `try-catch` chamada `response`, que irá conter a resposta da requisição.
+
+Response vai ser igual à resolução da Promisse da função `fetch()`, que vai ser esperada ser concluída através da palavra `await`. Na função `fetch()`, o primeiro parâmetro será o endpoint; já o segundo é um objeto de configurações da requisição.
+
+O `method` será justamente o método passado por parâmetro através da variável `method`. Depois, vamos configurar alguns headers da requisição, dos quais já falei um pouco aqui, e por fim, vamos definir a seguinte propriedade:
 
 ```javascript
 body: JSON.stringify(body)
