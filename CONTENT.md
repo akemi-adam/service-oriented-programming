@@ -2323,7 +2323,7 @@ Criamos um objeto vazio chamado `body` e usamos a função `map()` no nosso arra
 sendRequest(endpoint, 'POST', body)
 ```
 
-Só que o detalhe aqui, é que essa função não existe ainda. Então, precisamos criá-la:
+Só que o detalhe aqui é que essa função não existe ainda. Então, precisamos criá-la:
 
 ```javascript
 const sendRequest = async (endpoint, method, body) =>
@@ -2375,7 +2375,17 @@ Após a Promisse ser concluída, checamos se a requisição foi feita com sucess
 if (response.ok)
   window.location.href = './index.html';
 ```
+
+Podemos enfim testar se a nossa lógica está funcionando:
+
+![Envio de formulário para criar novo post](https://media.discordapp.net/attachments/942819468344713236/1104506819809906698/image.png?width=1200&height=403)
 <br><br>
+
+![Envio de formulário para criar novo peixe](https://media.discordapp.net/attachments/942819468344713236/1104507307477446656/image.png?width=1200&height=283)
+
+O resultado será:
+
+![Resultado](https://media.discordapp.net/attachments/942819468344713236/1104507247511474259/image.png?width=1127&height=585)
 
 # Referências
 
